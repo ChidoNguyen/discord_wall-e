@@ -398,3 +398,13 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+
+# User Defined
+discordCreds.*
+myvenv
+*pycache*
+*tmp.*
+*bot_cookies*
+*.DS_Store*
+*.ini*
