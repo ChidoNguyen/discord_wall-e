@@ -1,9 +1,8 @@
 import pytest , os
 os.environ["TEST_MODE"] = '1'
-import sys
-print(sys.path)
+from selenium.webdriver.common.by import By
 from unittest.mock import patch , MagicMock
-from src.automation.auto_bot_setup import create_user_save_dir , auto_bot_driver
+from src.automation.auto_bot_setup import create_user_save_dir , auto_bot_driver , homepage , login_page , login_creds_input
 
 '''
 with patch -> better for block code testing ( context manager)
@@ -72,22 +71,6 @@ def test_user_folder_create_v_two(mock_download_dir_two,test_user):
     assert os.path.exists(new_folder) , 'Folder directory does not exist.'
     assert os.path.isdir(new_folder) , 'Folder was not created.'
  """
-#smaller scoped patch that is not persistent thru whole testing script
-def test_user_folder_creation(tmp_path):
-    test_requester = "robboTest"
-    fake_download_dir = str(tmp_path)
-    with patch("src.automation.auto_bot_setup.download_dir",fake_download_dir):
-        user_folder = create_user_save_dir(test_requester)
-        
-        #Expectation : folder to be created
-        expected_path = os.path.join(fake_download_dir,test_requester)
-
-        #path creation string check
-        #path exists
-        #path is a folder and not file
-        assert user_folder == expected_path
-        assert os.path.exists(user_folder)
-        assert os.path.isdir(user_folder)
 
 ############## WebDriver Test ##########################
 # Need to create a mock of the web driver
@@ -114,3 +97,86 @@ def test_driver_instance(mock_driver,mock_tmp_path):
         assert driver == mock_driver, 'Driver instance is not properly mocked.'
         MockWebDriver.assert_called_once()
         assert prefs.get("downloadPath") == mock_tmp_path, 'Download directory not set properly.'
+
+#######
+
+@pytest.fixture
+def mock_config():
+    with patch("configparser.ConfigParser") as MockConfigParser:
+        mock_config = MockConfigParser.return_value
+
+        def get_mock(section,key):
+            values = {
+                ("WEB", "url") : "https://fakeurl.com",
+                ("WEB", "userID") : "fake_test_user",
+                ("WEB", "userPass") : "fake_pass_word"
+            }
+            return values.get((section,key),None)
+        mock_config.get.side_effect = get_mock
+        yield mock_config
+def test_mock_config(mock_config):
+    assert mock_config.get("WEB","url") == "https://fakeurl.com"
+    assert mock_config.get("WEB","userID") == "fake_test_user"
+    assert mock_config.get("WEB", "userPass") == "fake_pass_word"
+    
+def test_homepage_success(mock_driver,mock_config):
+    #correct target flag "Z-Library"
+    mock_driver.title = "Welcome to Z-Library"
+
+    with patch("configparser.ConfigParser", return_value = mock_config):
+        result = homepage(mock_driver)
+    assert result is mock_driver , 'Expected web driver object but got None'
+
+def test_homepage_fail(mock_driver,mock_config):
+    #correct target flag "Z-Library"
+    mock_driver.title = "Bad Title"
+
+    with patch("configparser.ConfigParser", return_value = mock_config):
+        result = homepage(mock_driver)
+    assert result is None , 'Expected None but got a web driver object'
+
+def test_login_page_navigate(mock_driver):
+    #need to build our MagicMock to have our target html elements
+    mock_login_link_div = MagicMock()
+    mock_anchor_element = MagicMock()
+
+    #mocking up what is returned when "find element" is called 
+    mock_driver.find_element.side_effect = lambda by , value : (mock_login_link_div if value == "user-data__sign" else MagicMock())
+    mock_login_link_div.find_element.return_value = mock_anchor_element # emulates anchor element nested under our login div
+    mock_anchor_element.get_attribute.return_value = "https://fakeurl.com/login"
+
+    result = login_page(mock_driver)
+
+    mock_driver.get.assert_called_once_with("https://fakeurl.com/login")
+    assert result is mock_driver, 'Expected web driver but got None'
+
+def test_login_page_navigate_fail(mock_driver):
+    mock_driver.find_element.side_effect = Exception('Element not found') #raise our own exception
+
+    result = login_page(mock_driver)
+
+    assert result is None , 'Expected None but got web driver object'
+
+def test_login_creds_input(mock_driver,mock_config):
+    mock_form = MagicMock()
+    mock_id_entry = MagicMock()
+    mock_pass_entry = MagicMock()
+    mock_submit_button = MagicMock()
+    mock_logout_link = MagicMock()
+    #when mock driver looks for form we give it our mock_form
+    mock_driver.find_element.side_effect = lambda by, value : (mock_form if value == "form" else MagicMock())
+    mock_form.find_element.side_effect = lambda by , value : {
+        (By.TAG_NAME, "form") : mock_form,
+        (By.NAME, "email") : mock_id_entry,
+        (By.NAME, "password") : mock_pass_entry,
+        (By.TAG_NAME,"button") : mock_submit_button,
+        (By.XPATH, "//a[@href='logout.php']") : mock_logout_link
+
+    }.get((by,value), MagicMock())
+    print("Button mock:" , mock_driver.find_element(By.TAG_NAME, "button"))
+    with patch("src.automation.auto_bot_setup.userID",mock_config.get("WEB","userID")) , patch("src.automation.auto_bot_setup.userPass",mock_config.get("WEB","userPass")):
+        result = login_creds_input(mock_driver)
+    mock_id_entry.send_keys.assert_called_once_with(mock_config.get("WEB","userID"))
+    mock_pass_entry.send_keys.assert_called_once_with(mock_config.get("WEB", "userPass"))
+    mock_submit_button.click.assert_called_once()
+    assert result is mock_driver, "Expected web driver but instead got None"

@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import platform , configparser , time , os
 from src.automation import bot_site_cookies
-from .book_bot_config import download_dir
+from .book_bot_config import download_dir , url , userID , userPass
 #prevent config imports for testing
 """ print(os.getenv("TEST_MODE"))
 if not os.getenv("TEST_MODE"):
@@ -43,9 +43,7 @@ def auto_bot_driver(save_dir):
     return bot_driver
 
 def homepage(bot_driver):
-    config = configparser.ConfigParser()
-    config.read('book_bot_config.ini')
-    site_url = config.get('WEB','url')
+    site_url = url
 
     bot_driver.get(site_url)
     bot_driver.implicitly_wait(10)
@@ -72,9 +70,8 @@ def login_page(bot_driver):
 
     #login form
 def login_creds_input(bot_driver):
-    config = configparser.ConfigParser()
-    config.read("book_bot_config.ini")
-    uID , uPass = config.get("WEB",'userID'), config.get("WEB",'userPass')
+    
+    uID , uPass = userID , userPass
 
     login_form = bot_driver.find_element(By.TAG_NAME, "form")
     idEntry = login_form.find_element(By.NAME, 'email').send_keys(uID)
