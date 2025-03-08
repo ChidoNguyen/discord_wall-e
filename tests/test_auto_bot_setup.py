@@ -2,8 +2,8 @@ import pytest , os
 os.environ["TEST_MODE"] = '1'
 import sys
 print(sys.path)
-from unittest.mock import patch
-from src.automation.auto_bot_setup import create_user_save_dir
+from unittest.mock import patch , MagicMock
+from src.automation.auto_bot_setup import create_user_save_dir , auto_bot_driver
 
 '''
 with patch -> better for block code testing ( context manager)
@@ -89,4 +89,28 @@ def test_user_folder_creation(tmp_path):
         assert os.path.exists(user_folder)
         assert os.path.isdir(user_folder)
 
+############## WebDriver Test ##########################
+# Need to create a mock of the web driver
+# Patch normal webdriver with our mock-up 
+######
 
+@pytest.fixture
+def mock_driver():
+    '''create a mocked webdriver instance'''
+    with patch("selenium.webdriver.Chrome") as MockWebDriver: #might need this for linux --> patch("selenium.webdriver.chrome.service.Service")
+        driver_instance_mock = MagicMock()
+        MockWebDriver.return_value = driver_instance_mock
+        yield driver_instance_mock
+
+def test_driver_instance(mock_driver,mock_tmp_path):
+    with patch("selenium.webdriver.Chrome") as MockWebDriver:
+        MockWebDriver.return_value = mock_driver
+        driver = auto_bot_driver(mock_tmp_path)
+
+        mock_driver.execute_cdp_cmd.return_value = {"downloadPath" : mock_tmp_path}
+
+        prefs = driver.execute_cdp_cmd("Page.getDownloadBehavior", {})
+
+        assert driver == mock_driver, 'Driver instance is not properly mocked.'
+        MockWebDriver.assert_called_once()
+        assert prefs.get("downloadPath") == mock_tmp_path, 'Download directory not set properly.'
