@@ -41,7 +41,7 @@ def test_user():
 #OG Function utilizes config file to extract parent "download_dir" to create new folder under
 #To-do: Need to patch the OG Download_Dir 
 
-@patch("scripts.auto_bot_setup.download_dir")
+@patch("src.automation.auto_bot_setup.download_dir")
 def test_user_folder_create_v_one(mock_download_dir_one,test_user,mock_tmp_path):
     #approach patches download_dir with mock obj "mock_download_dir_one"
     #we can set a return value
@@ -76,7 +76,7 @@ def test_user_folder_create_v_two(mock_download_dir_two,test_user):
 def test_user_folder_creation(tmp_path):
     test_requester = "robboTest"
     fake_download_dir = str(tmp_path)
-    with patch("scripts.auto_bot_setup.download_dir",fake_download_dir):
+    with patch("src.automation.auto_bot_setup.download_dir",fake_download_dir):
         user_folder = create_user_save_dir(test_requester)
         
         #Expectation : folder to be created
