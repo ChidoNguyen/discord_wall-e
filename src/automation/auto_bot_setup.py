@@ -79,7 +79,7 @@ def login_creds_input(bot_driver):
     submitButton = login_form.find_element(By.TAG_NAME, 'button').click()
 
     try:
-        bot_driver.find_element(By.XPATH, "//a[@href='/logout.php']")
+        bot_driver.find_element(By.XPATH, "//a[@href='/logout']")
         return bot_driver
     except:
         print("login attempt failed")
@@ -107,4 +107,5 @@ def auto_bot(requester):
         bot_site_cookies.save_cookies(logged_in_driver)
         return logged_in_driver, save_dir
 
-create_user_save_dir("testerino")
+if __name__ == '__main__':
+    auto_bot("funz")

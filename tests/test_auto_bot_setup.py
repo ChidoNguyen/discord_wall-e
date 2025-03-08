@@ -1,4 +1,6 @@
-import pytest , os
+import pytest
+import shutil
+import os
 os.environ["TEST_MODE"] = '1'
 from selenium.webdriver.common.by import By
 from unittest.mock import patch , MagicMock
@@ -40,23 +42,25 @@ def test_user():
 #OG Function utilizes config file to extract parent "download_dir" to create new folder under
 #To-do: Need to patch the OG Download_Dir 
 
-@patch("src.automation.auto_bot_setup.download_dir")
-def test_user_folder_create_v_one(mock_download_dir_one,test_user,mock_tmp_path):
-    #approach patches download_dir with mock obj "mock_download_dir_one"
-    #we can set a return value
-    mock_download_dir_one.return_value = mock_tmp_path
-    #when we call our create_user_save_dir
-    #pass it our test fixture username
-    #our @Patch replaces the download_dir object normally used with our mocked one
-    new_folder = create_user_save_dir(test_user)
-    
-    #EXPECTATIONS
-    expected_folder = os.path.join(mock_download_dir_one,test_user)
-    
-    assert expected_folder == new_folder , 'Folder created in unexpected directory.'
-    assert os.path.exists(new_folder) , 'Folder directory does not exist.'
-    assert os.path.isdir(new_folder) , 'Folder was not created.'
+#@patch("src.automation.auto_bot_setup.download_dir")
+def test_user_folder_create_v_one(test_user,mock_tmp_path):
+    with patch("src.automation.auto_bot_setup.download_dir", mock_tmp_path):
+        #approach patches download_dir with mock obj "mock_download_dir_one"
+        #we can set a return value
+        #mock_download_dir_one = mock_tmp_path
+        #when we call our create_user_save_dir
+        #pass it our test fixture username
+        #our @Patch replaces the download_dir object normally used with our mocked one
+        new_folder = create_user_save_dir(test_user)
+        
+        #EXPECTATIONS
+        expected_folder = os.path.join(mock_tmp_path,test_user)
+        
+        assert expected_folder == new_folder , 'Folder created in unexpected directory.'
+        assert os.path.exists(new_folder) , 'Folder directory does not exist.'
+        assert os.path.isdir(new_folder) , 'Folder was not created.'
 
+        shutil.rmtree(new_folder)
 """ 
 This approach does not work because new_callable is ran at patch-time before pytest injects--
 ---so "mock_tmp_dir" is undefined at time of new_callable attempt
@@ -169,7 +173,7 @@ def test_login_creds_input(mock_driver,mock_config):
         (By.NAME, "email") : mock_id_entry,
         (By.NAME, "password") : mock_pass_entry,
         (By.TAG_NAME,"button") : mock_submit_button,
-        (By.XPATH, "//a[@href='logout.php']") : mock_logout_link
+        (By.XPATH, "//a[@href='/logout']") : mock_logout_link
 
     }.get((by,value), MagicMock())
     print("Button mock:" , mock_driver.find_element(By.TAG_NAME, "button"))
