@@ -166,7 +166,6 @@ def test_login_creds_input(mock_driver,mock_config):
     #when mock driver looks for form we give it our mock_form
     mock_driver.find_element.side_effect = lambda by, value : (mock_form if value == "form" else MagicMock())
     mock_form.find_element.side_effect = lambda by , value : {
-        (By.TAG_NAME, "form") : mock_form,
         (By.NAME, "email") : mock_id_entry,
         (By.NAME, "password") : mock_pass_entry,
         (By.TAG_NAME,"button") : mock_submit_button,
@@ -180,3 +179,30 @@ def test_login_creds_input(mock_driver,mock_config):
     mock_pass_entry.send_keys.assert_called_once_with(mock_config.get("WEB", "userPass"))
     mock_submit_button.click.assert_called_once()
     assert result is mock_driver, "Expected web driver but instead got None"
+
+def test_login_creds_input_fail(mock_driver,mock_config):
+    mock_form = MagicMock()
+    mock_id_entry = MagicMock()
+    mock_pass_entry = MagicMock()
+    mock_submit_button = MagicMock()
+
+    #missing logout aspect
+
+    def mock_find_elements(by,value):
+        elements = {
+            (By.NAME, "email") : mock_id_entry,
+            (By.NAME, "password") : mock_pass_entry,
+            (By.TAG_NAME,"button") : mock_submit_button
+        }
+        if (by,value) in elements:
+            return elements[(by,value)]
+        raise Exception("element not found") #faking no logout element
+    mock_driver.find_element.side_effect = lambda by, value : (mock_form if value == "form" else MagicMock())
+    mock_form.find_element.side_effect = mock_find_elements
+
+    with patch("src.automation.auto_bot_setup.userID",mock_config.get("WEB","userID")) , patch("src.automation.auto_bot_setup.userPass",mock_config.get("WEB","userPass")):
+        result = login_creds_input(mock_driver)
+    mock_id_entry.send_keys.assert_called_once_with(mock_config.get("WEB","userID"))
+    mock_pass_entry.send_keys.assert_called_once_with(mock_config.get("WEB", "userPass"))
+    mock_submit_button.click.assert_called_once()
+    assert result is mock_driver, "Expected None on failed login"
