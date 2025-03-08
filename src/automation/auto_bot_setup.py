@@ -2,8 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import platform , configparser , time , os
-import scripts.bot_site_cookies
-from book_bot_config import download_dir
+from .book_bot_config import download_dir
 #prevent config imports for testing
 """ print(os.getenv("TEST_MODE"))
 if not os.getenv("TEST_MODE"):
