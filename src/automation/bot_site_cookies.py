@@ -1,17 +1,20 @@
 import sys, os, time, json
 
 COOKIES = {
-    'path' : "./cookies/",
+    'path' : "cookies",
     'fname' : 'bot_cookies.json'
 }
 
 '''
 epoch : true if not expired // other wise false 
 '''
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+COOKIES_PATH = os.path.join(BASE_DIR,COOKIES['path'])
+
 def valid_cookies():
     cookies_json = None
     try:
-        with open(COOKIES['path'] + COOKIES['fname'], 'r') as file:
+        with open(os.path.join(COOKIES_PATH,COOKIES['fname']), 'r') as file:
             cookies_json = json.load(file)
     except Exception as e:
         print(f'Error : {e}')
@@ -25,7 +28,7 @@ def valid_cookies():
 def load_cookies(bot_webdriver):
     cookies_json = None
     try:
-        with open(COOKIES['path'] + COOKIES['fname'], 'r') as file:
+        with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'r') as file:
             cookies_json = json.load(file)
     except Exception as e:
         print(f'Error: {e}')
@@ -50,10 +53,10 @@ def load_cookies(bot_webdriver):
 def save_cookies(bot_webdriver):
     cookies = bot_webdriver.get_cookies()
     try:
-        with open(COOKIES['path'] + COOKIES['fname'], 'w') as file:
+        with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'w') as file:
             json.dump(cookies,file)
     except Exception as e:
         print(f'Cookies failed to save. Error : {e}')
         return False
 if __name__ == '__main__':
-    valid_cookies()
+    print(COOKIES_PATH)
