@@ -2,13 +2,9 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-import configparser
+from .book_bot_config import url as site_url
 
-config = configparser.ConfigParser()
-config.read("book_bot_config.ini")
-site_url = config.get("WEB", "url")
 
-#return tuple (driver,results)
 MAX_RESULTS = 10
 #Input + Clicks search returns web_driver if OK , None if errors
 def search_query_input(bot_webdriver, search_query):

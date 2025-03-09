@@ -1,6 +1,6 @@
 
 import sys,os
-from auto_bot_setup import auto_bot
+from src.automation.auto_bot_setup import auto_bot
 from auto_bot_search import bot_search
 from auto_bot_download import start_download
 from auto_bot_util import max_limit
