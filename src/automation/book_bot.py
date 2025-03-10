@@ -1,9 +1,9 @@
 
 import sys,os
 from src.automation.auto_bot_setup import auto_bot
-from auto_bot_search import bot_search
-from auto_bot_download import start_download
-from auto_bot_util import max_limit
+from src.automation.auto_bot_search import bot_search
+from src.automation.auto_bot_download import start_download
+from src.automation.auto_bot_util import max_limit
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']

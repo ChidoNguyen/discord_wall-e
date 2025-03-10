@@ -6,12 +6,13 @@ from .book_bot_config import url as site_url
 
 
 MAX_RESULTS = 10
-#Input + Clicks search returns web_driver if OK , None if errors
-def search_query_input(bot_webdriver, search_query):
-    XPATH = {
+XPATH = {
         's_field' : "//input[@id= 'searchFieldx']",
         's_button' : "//button[@type= 'submit' and @aria-label='Search']"
     }
+#Input + Clicks search returns web_driver if OK , None if errors
+def search_query_input(bot_webdriver, search_query):
+
 
     try:
         search_field = bot_webdriver.find_element(By.XPATH, XPATH['s_field'])
