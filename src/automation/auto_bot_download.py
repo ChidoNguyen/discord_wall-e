@@ -8,7 +8,7 @@ import os, time, re
 #rawest form of "download"
 def rename_book_file(book,author,user_folder):
     try:
-        book = re.sub(r'[<>:"/\\|?*]', ' ', book)
+        book = re.sub(r'[<>:"/\\|?*]', ' ', book) #replaces special chars with spaces
         all_files = [os.path.join(user_folder, files) for files in os.listdir(user_folder)]
         newest = max(all_files, key = os.path.getctime)
         os.rename(os.path.join(user_folder,newest),os.path.join(user_folder, f'{book} by {author}.epub'))
