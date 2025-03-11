@@ -32,13 +32,35 @@ def test_auto_bot_search_input(mock_webdriver):
     mock_search_field.send_keys.assert_called_once_with(mock_search_query)
     mock_search_button.click.assert_called_once()
 
-def raise_no_element(by,value):
+def raise_no_element(*args,**kwargs):
     raise NoSuchElementException("missing mocked element")
 
 def test_auto_bot_search_missing_search(mock_webdriver):
 
     ##### NEED TO MOCK fields maybe
     mock_webdriver.find_element.side_effect = raise_no_element
+    mock_search_field = MagicMock()
+    mock_search_button = MagicMock()
+    #ensure no other variables/items in function were touched
 
     result = search_query_input(mock_webdriver, "mock_query")
     assert result is None
+    mock_search_field.send_keys.assert_not_called()
+    mock_search_button.click.assert_not_called()
+
+#simulate missing search button 
+def test_auto_bot_search_missing_button(mock_webdriver):
+    #feed a mocked webdriver if search field is accessing the find element else trigger no element
+    mock_search_field = MagicMock()
+    mock_search_button = MagicMock()
+    
+    mock_webdriver.find_element.side_effect = lambda by,value : mock_search_field if (by,value) == (By.XPATH,XPATH['s_field']) else raise_no_element()
+    
+
+    result = search_query_input(mock_webdriver,"mock_query")
+
+    assert result is None
+
+    assert mock_webdriver.find_element.call_count == 2 
+    mock_search_field.send_keys.assert_called_once_with("mock_query")
+    mock_search_button.click.assert_not_called()

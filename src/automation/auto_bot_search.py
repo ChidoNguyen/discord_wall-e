@@ -22,6 +22,7 @@ def search_query_input(bot_webdriver, search_query):
     
     try:
         search_field.send_keys(search_query)
+        #chaining causes error when testing and safer to split
         search_button = bot_webdriver.find_element(By.XPATH, XPATH['s_button']).click()
     except NoSuchElementException as e:
         print(f'Error: {e}')
