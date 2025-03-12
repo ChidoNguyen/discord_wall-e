@@ -8,10 +8,12 @@ import os, time, re
 #rawest form of "download"
 def rename_book_file(book,author,user_folder):
     try:
-        book = re.sub(r'[<>:"/\\|?*]', ' ', book) #replaces special chars with spaces
+        book = re.sub(r'[<>:"/\\|?*]', '', book) #replaces special chars with spaces
         all_files = [os.path.join(user_folder, files) for files in os.listdir(user_folder)]
+        if not all_files:
+            raise OSError("Empty directory")
         newest = max(all_files, key = os.path.getctime)
-        os.rename(os.path.join(user_folder,newest),os.path.join(user_folder, f'{book} by {author}.epub'))
+        os.rename(newest,os.path.join(user_folder, f'{book} by {author}.epub'))
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 
