@@ -5,8 +5,8 @@ from selenium.common.exceptions import NoSuchElementException , TimeoutException
 
 import os, time , re
 
-from src.automation.auto_bot_download import rename_book_file
-
+from src.automation.auto_bot_download import rename_book_file , download_progress , download_attempt
+#! Rare for a file to have the getctime value; for our case it should only be 1 download at a time shouldn't be an issue
 @pytest.fixture
 def mock_os():
     #expand if we want to mock more but for now we are mocking os.path.join / getctime/listdir/rename(?)
@@ -25,7 +25,7 @@ def mock_data():
 # os-related block for getting newest file
 # rename
 
-def test_auto_book_download_rename_file(mock_os):
+def test_auto_bot_download_rename_file(mock_os):
     #regex to make new book title if needed
     mock_join , mock_getctime , mock_listdir , mock_rename= mock_os
     mock_book = "Proper Book Title"
@@ -48,9 +48,9 @@ def test_auto_book_download_rename_file(mock_os):
     mock_rename.assert_called_once_with(f'{mock_user_folder}/newest',f'{mock_user_folder}/{mock_book} by {mock_author}.epub')
 
 #
-def test_auto_book_download_rename_bad_path(mock_os,mock_data):
+def test_auto_bot_download_rename_empty_dir(mock_os,mock_data):
     mock_title , mock_author , mock_folder , mock_dir_files= mock_data
-    mock_join, mock_getctime , mock_listdir , mock_rename = mock_os
+    mock_join, _ , mock_listdir , _ = mock_os
     mock_bad_title = "Te<>*:st T\\itl?e"
 
     #normal mock_join.side_effect = lambda folder,file : f'{folder}/{file}'
@@ -65,3 +65,62 @@ def test_auto_book_download_rename_bad_path(mock_os,mock_data):
     mock_listdir.assert_called_once()
     assert result == False
 
+####### Download Progress #####
+
+def test_auto_bot_download_completion(mock_os,mock_data):
+    _ , _ , mock_listdir , _ = mock_os
+    _ , _ , mock_folder , mock_files = mock_data
+
+    mock_listdir.return_value = mock_files
+
+    #
+    result = download_progress(mock_folder)
+    assert result == True
+    mock_listdir.assert_called_once_with(mock_folder)
+
+def test_auto_bot_download_fail(mock_os,mock_data):
+    _ , _ , mock_listdir , _ = mock_os
+    _ , _ , mock_folder , mock_files = mock_data
+    mock_files.append('newer.crdownload')
+    mock_listdir.return_value = mock_files
+    result = download_progress(mock_folder,timeout_limit=1)
+    assert result == False
+
+
+#### Download Attempt ######
+@patch("selenium.webdriver.Chrome")
+@patch("selenium.webdriver.support.expected_conditions")
+@patch("selenium.webdriver.support.wait.WebDriverWait")
+def test_auto_bot_download_initiation(mock_wait,mock_EC,mock_driver,mock_data):
+    mock_url = "https://test.com"
+    mock_title, mock_author , mock_folder , _ = mock_data
+    #DYNAMIC CHANGES SOMETIMES
+    title_xpath = '//h1[@itemprop= "name"]'
+    author_xpath = '//a[@class= "color1"][@title="Find all the author\'s book"]'
+    mock_download_button = MagicMock()
+    mock_title_element = MagicMock()
+    mock_author_element = MagicMock()
+    
+    mock_driver.find_element.side_effect = lambda by,value :{
+        (By.XPATH, title_xpath) : mock_title_element,
+        (By.XPATH, author_xpath) : mock_author_element,
+        (By.CSS_SELECTOR, "a.btn.btn-default.addDownloadedBook") : mock_download_button
+    }.get((by,value), None)
+
+    #mock_wait.return_value = mock_driver
+    mock_wait.until.side_effect = lambda condition: condition((By.CSS_SELECTOR,"a.btn.btn-default.addDownloadedBook"))
+    mock_EC.presence_of_element_located.return_value = mock_download_button
+    with patch("src.automation.auto_bot_download.download_progress", return_value = True), patch("src.automation.auto_bot_download.rename_book_file", return_value=True):
+        result = download_attempt(mock_driver,mock_url,mock_folder)
+        assert result is mock_driver
+        print()
+        print(mock_driver.mock_calls)
+        print(mock_wait.until.mock_calls)
+        print(mock_EC.mock_calls)
+        print(mock_download_button.mock_calls)
+    return
+    
+
+
+
+    

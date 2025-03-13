@@ -19,11 +19,11 @@ def rename_book_file(book,author,user_folder):
         return False 
     return True
 
-def download_progress(user_folder):
+def download_progress(user_folder, timeout_limit = 60):
     download_complete = False
     time.sleep(5)
     timeout_counter = 0
-    timeout_limit = 60
+    #timeout_limit = 60
     while not download_complete and timeout_counter < timeout_limit:
         download_complete = True
         for file_names in os.listdir(user_folder):
@@ -38,7 +38,6 @@ def download_attempt(bot_webdriver, link_url, user_folder):
     #we need the driver and the url
 
     bot_webdriver.get(link_url) 
-
     #find the download button
 
     try:
@@ -53,15 +52,16 @@ def download_attempt(bot_webdriver, link_url, user_folder):
         return None
 
     #extract authoer title for file renaming
-
+    '''
     try:
         book_name = bot_webdriver.find_element(By.XPATH, '//h1[@itemprop= "name"]').text
         author_name = bot_webdriver.find_element(By.XPATH, '//a[@class= "color1"][@title="Find all the author\'s book"]').text
     except NoSuchElementException as e:
         print(f'Error in extracting book name and author name. {e}')
         return None
-
-
+    '''
+    book_name = ""
+    author_name = ""
     #download complete check
 
     if download_progress(user_folder):
