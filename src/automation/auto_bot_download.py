@@ -51,17 +51,14 @@ def download_attempt(bot_webdriver, link_url, user_folder):
         print(f'Timeout error trying to locate download button. {e}')
         return None
 
-    #extract authoer title for file renaming
-    '''
+    #extract author title for file renaming
     try:
         book_name = bot_webdriver.find_element(By.XPATH, '//h1[@itemprop= "name"]').text
         author_name = bot_webdriver.find_element(By.XPATH, '//a[@class= "color1"][@title="Find all the author\'s book"]').text
     except NoSuchElementException as e:
         print(f'Error in extracting book name and author name. {e}')
         return None
-    '''
-    book_name = ""
-    author_name = ""
+
     #download complete check
 
     if download_progress(user_folder):
