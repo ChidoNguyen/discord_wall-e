@@ -31,36 +31,21 @@ def arg_parse():
     return args.user, args.search, args.option
 
 def book_bot():
-    #### Removed #####
-    '''
-    if len(sys.argv) != 4:
-        print(f'Invalid number of arguments. Expected: 4, Received: {len(sys.argv)}.')
-        sys.exit(1)
-    if sys.argv[-1] not in BOT_SETTINGS:
-        print(f'Invalid setting argument used.')
-        sys.exit(1)
-    '''
-    
     #keyword arg parsing rather than positional args
-    bot_search_terms, bot_user_req, bot_option = arg_parse()
+    bot_username, bot_search_terms,bot_option = arg_parse()
 
 
-    if None in (bot_search_terms,bot_user_req,bot_option):
+    if None in (bot_search_terms,bot_username,bot_option):
         print(f'Invalid number of arguments')
         sys.exit(1)
-        
+
     #bot options check
     if bot_option not in BOT_SETTINGS:
         print(f'Invalid bot option. Expected "getbook" , "getbook-adv", "pick" .')
         sys.exit(1)
-    return 
 
-
-    book_search_string = sys.argv[1]
-    requester_id = sys.argv[2]
-    auto_bot_setting = sys.argv[-1]
     #initialize selenium webdriver 
-    bot_driver,user_folder = auto_bot(requester_id)
+    bot_driver,user_folder = auto_bot(bot_username)
 
     #download limit check
     if max_limit(bot_driver):
@@ -68,8 +53,8 @@ def book_bot():
         sys.exit(10)
 
     outcome = None
-    if auto_bot_setting != 'pick':
-        bot_search_results = bot_search(bot_driver, book_search_string) # tuple (driver,list of links)
+    if bot_option != 'pick':
+        bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
         #can check for tuple or None
         if bot_search_results is None:
             print(f'Error in search scripts.')
@@ -79,9 +64,9 @@ def book_bot():
         if not links:
             print(f'No links can be found for the book.')
             return
-        if auto_bot_setting == 'getbook':
+        if bot_option == 'getbook':
             outcome = start_download(bot_driver,user_folder,links[0]) #auto download top link
-        elif auto_bot_setting == 'getbook-adv':
+        elif bot_option == 'getbook-adv':
             #dump our list of links to output.txt
             try:
                 with open(os.path.join(user_folder,"output.txt"), 'w') as f:
@@ -93,7 +78,7 @@ def book_bot():
                 print(f'{e}')
     else:
         #its our pick choose/load proper url (?)
-        outcome = start_download(bot_driver,user_folder,book_search_string) #bsstring should be direct url
+        outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
     
     if bot_driver and outcome:
         bot_driver.quit()

@@ -23,7 +23,7 @@ def create_user_save_dir(requester):
 def auto_bot_driver(save_dir):
     #chrome driver options
     options = webdriver.ChromeOptions()
-    #options.add_argument("--headless") #no window open during script run
+    options.add_argument("--headless") #no window open during script run
     prefs = {
         "download.default_directory" : save_dir ,
         "savefile.default_directory" : save_dir , 
