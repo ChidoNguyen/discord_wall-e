@@ -1,5 +1,5 @@
 
-import sys,os
+import sys,os, argparse
 from src.automation.auto_bot_setup import auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
@@ -7,14 +7,54 @@ from src.automation.auto_bot_util import max_limit
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
+'''
+diff system argument approach from ORDER dependent arguments to
+anyorder via keyword arguments
+
+--search
+--user
+--option
+
+'''
+def arg_parse():
+    parser = argparse.ArgumentParser(description="book_bot_kwargs")
+    #argument count 
+    count = 3
+
+    parser.add_argument('--search' , type=str, required=True, help= 'Search string used to designate what to look for.')
+    parser.add_argument('--user' , type = str , required= True, help = "User's name to help with file organization and task tracking.")
+    parser.add_argument('--option', type = str, required= True, help='Designates the bot for usage type among: getbook , getbook-adv, pick')
+    try:
+        args = parser.parse_args()
+    except:
+        return (None,) * count
+    return args.user, args.search, args.option
 
 def book_bot():
+    #### Removed #####
+    '''
     if len(sys.argv) != 4:
         print(f'Invalid number of arguments. Expected: 4, Received: {len(sys.argv)}.')
         sys.exit(1)
     if sys.argv[-1] not in BOT_SETTINGS:
         print(f'Invalid setting argument used.')
         sys.exit(1)
+    '''
+    
+    #keyword arg parsing rather than positional args
+    bot_search_terms, bot_user_req, bot_option = arg_parse()
+
+
+    if None in (bot_search_terms,bot_user_req,bot_option):
+        print(f'Invalid number of arguments')
+        sys.exit(1)
+        
+    #bot options check
+    if bot_option not in BOT_SETTINGS:
+        print(f'Invalid bot option. Expected "getbook" , "getbook-adv", "pick" .')
+        sys.exit(1)
+    return 
+
 
     book_search_string = sys.argv[1]
     requester_id = sys.argv[2]
