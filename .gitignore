@@ -408,3 +408,4 @@ myvenv
 *bot_cookies*
 *.DS_Store*
 *.ini*
+.env
