@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 DiscordToken = os.getenv("DISCORD_TOKEN")
+Janitors = int(os.getenv("JANITORS"))
 
 ###Bot Persmissions###
 intents = discord.Intents.default()
@@ -19,19 +20,17 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 
 async def load_cogs():
     await bot.load_extension("src.discord.cogs.book")
-    print(list(bot.cogs.keys()))
+    await bot.load_extension("src.discord.cogs.help")
+
+
 @bot.event
 async def on_ready():
     server_name = discord.utils.get(bot.guilds)
     print(f'Logged in as {bot.user} in {server_name}.')
-    await bot.tree.sync()
-@bot.command()
-async def list_commands(ctx):
-    commands = await bot.tree.fetch_commands()  # Fetch all registered global commands
-    if commands:
-        await ctx.send(f"Global commands: {[cmd.name for cmd in commands]}")
-    else:
-        await ctx.send("No global commands found. Your bot might be using guild-specific commands.")
+    await bot.tree.sync(guild=discord.Object(id=Janitors))
+    print(list(bot.cogs.keys()))
+
+
 async def main():
     async with bot:
         await load_cogs()
