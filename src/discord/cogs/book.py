@@ -16,8 +16,9 @@ class Book(commands.Cog):
     @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user
-        await interaction.response.send_message("Working on it.")
+        await interaction.response.send_message(f'Looking for {title} by {author}')
         print(f'{title} {author}')
+        await interaction.followup.send("Should be file.")
 
 async def setup(bot):
     await bot.add_cog(Book(bot))
