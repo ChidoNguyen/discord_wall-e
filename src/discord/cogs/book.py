@@ -19,6 +19,11 @@ class Book(commands.Cog):
         await interaction.response.send_message(f'Looking for {title} by {author}')
         print(f'{title} {author}')
         await interaction.followup.send("Should be file.")
+        ###
+        '''
+        need to setup payload here with requests/response or aiotthp
+        data = {title : "title", author : "author"}
+        '''
 
 async def setup(bot):
     await bot.add_cog(Book(bot))
