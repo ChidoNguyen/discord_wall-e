@@ -2,22 +2,29 @@ import asyncio
 #from src.automation.book_bot import book_bot
 
 
-async def search_book(BookInfo : dict):
-    search_title = BookInfo['title']
-    search_author = BookInfo['author']
-    search_user = BookInfo['username']
+async def find_book_service(book_info : dict, user_info : dict):
+    search_title = book_info['title']
+    search_author = book_info['author']
+    discord_user = user_info['username']
+
     #arguments for book_bot#
     args = [
         'python', '-m',
         'src.automation.book_bot',
         '--search', f'{search_title} by {search_author}',
-        '--user', f'{search_user}',
+        '--user', f'{discord_user}',
         '--option', 'getbook'
     ]
     #our process lets call it librarian#
+    print("start")
     librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
     stdout , stderr = await librarian.communicate()
-    print(stdout.decode(),stderr.decode())
+    #print(stdout.decode(),stderr.decode())
+    tmp = {
+        'status' : 'success',
+        'message' : 'selenium script success',
+        'file_path' : 'none'
+    }
     return f'{search_title} by {search_author}'
 
 '''

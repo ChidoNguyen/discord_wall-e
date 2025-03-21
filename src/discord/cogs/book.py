@@ -3,6 +3,7 @@ import discord.interactions
 from discord.ext import commands
 from discord import app_commands
 
+import aiohttp
 class Book(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
@@ -19,7 +20,44 @@ class Book(commands.Cog):
         await interaction.response.send_message(f'Looking for {title} by {author}')
         print(f'{title} {author}')
         await interaction.followup.send("Should be file.")
-        ###
+        ####
+        #expected payload 
+        unknown_book = {
+            'title' : {title},
+            'author' : {author}
+        }
+        user_details = { 'username' : {user_name}}
+        data = {
+            'unknown_book' : unknown_book,
+            'user_details' : user_details
+        }
+        test_url = 'http://localhost:8000/find_book'
+        print("no")
+        try:
+            print("?")
+            async with aiohttp.ClientSession() as session:
+                print(session)
+                print(test_url)
+                print(data)
+                async with session.post(test_url, json=data) as response:
+                    print("?")
+                    if response.status == 200:
+                        await interaction.followup.send("file")
+                    else:
+                        await interaction.followup.send("fail")
+        except aiohttp.ClientError as e:
+            print(f"A client error occurred: {e}")
+        except aiohttp.ClientConnectionError as e:
+            print(f"A connection error occurred: {e}")
+        except aiohttp.ClientResponseError as e:
+            print(f"A response error occurred: {e.status} - {e.message}")
+        except aiohttp.ClientTimeout as e:
+            print(f"A timeout error occurred: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        except:
+            print("How?")
+        ####
         '''
         need to setup payload here with requests/response or aiotthp
         data = {title : "title", author : "author"}
