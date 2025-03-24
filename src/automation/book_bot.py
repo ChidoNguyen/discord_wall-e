@@ -1,5 +1,8 @@
 
-import sys,os, argparse
+import sys
+import os
+import argparse
+import json
 from src.automation.auto_bot_setup import auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
@@ -36,7 +39,10 @@ def book_bot():
 
 
     if None in (bot_search_terms,bot_username,bot_option):
-        print(f'Invalid number of arguments')
+        #print(f'Invalid number of arguments')
+        tmp = {"status" : "failure" , "message" : "Invalid arguments"}
+        print(json.dumps(tmp))
+        return None
         sys.exit(1)
 
     #bot options check
@@ -82,6 +88,7 @@ def book_bot():
     
     if bot_driver and outcome:
         bot_driver.quit()
+        print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
         return True
     return None
 

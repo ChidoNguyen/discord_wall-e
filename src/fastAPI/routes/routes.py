@@ -34,8 +34,11 @@ def template_api_response(status: str, message: str, data : Dict[str,Any] | None
     return response
 @router.post("/find_book")
 async def find_book(unknown_book : UnknownBook, user_details : UserDetails):
-    print("looking")
+    #print("looking")
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_book_service(book_info,user_info)
-    return {"message" : novel}
+    #print(novel)
+    if novel is not None:
+        return {"message" : novel}
+    return None

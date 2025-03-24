@@ -2,6 +2,7 @@ import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
+from ..utils import discord_file_creation
 
 import aiohttp
 class Book(commands.Cog):
@@ -19,8 +20,6 @@ class Book(commands.Cog):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
         print(f'{title} {author}')
-        print(type(interaction), type(user_name),f'{user_name}')
-        print(interaction.user.name)
         await interaction.followup.send("Should be file.")
         ####
         #expected payload 
@@ -40,10 +39,12 @@ class Book(commands.Cog):
             async with aiohttp.ClientSession() as session:
                 try:
                     async with session.post(test_url, json=data) as response:
-                        if response.status == 200:
-                            await interaction.followup.send("file")
+                        job_status = await response.json()
+                        if response.status == 200 and job_status is not None:
+                            to_be_attached = discord_file_creation(username = user_name, title = title,author = author)
+                            await interaction.followup.send("file",file=to_be_attached)
                         else:
-                            await interaction.followup.send("fail")
+                            await interaction.followup.send("Failed to fetch file.")
                 except Exception as e:
                     print(f'{e}')
         except aiohttp.ClientError as e:
