@@ -16,12 +16,15 @@ class Book(commands.Cog):
     @app_commands.command(name="findbook", description="Gets you a book.")
     @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
-        user_name = interaction.user
+        user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
         print(f'{title} {author}')
+        print(type(interaction), type(user_name),f'{user_name}')
+        print(interaction.user.name)
         await interaction.followup.send("Should be file.")
         ####
         #expected payload 
+        
         unknown_book = {
             'title' : title,
             'author' : author
@@ -31,20 +34,12 @@ class Book(commands.Cog):
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
-        print(type(unknown_book), type(title))
-        return
         test_url = 'http://localhost:8000/find_book'
-        print("no")
         try:
-            print("?")
 
             async with aiohttp.ClientSession() as session:
-                print(session)
-                print(test_url)
-                print(data)
                 try:
-                    async with session.post(test_url, json={'unknown_book' : {'title' : 'origin' , 'author' : 'dan brown'}, 'user_details' : {'username' :'foogz'}}) as response:
-                        print("?")
+                    async with session.post(test_url, json=data) as response:
                         if response.status == 200:
                             await interaction.followup.send("file")
                         else:
@@ -61,8 +56,7 @@ class Book(commands.Cog):
             print(f"A timeout error occurred: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        except:
-            print("How?")
+
         ####
         '''
         need to setup payload here with requests/response or aiotthp

@@ -1,6 +1,6 @@
-import asyncio , sys
+import asyncio 
+import sys
 #from src.automation.book_bot import book_bot
-
 ### DO NOT RUN WITH RELOAD ####
 async def find_book_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
@@ -17,15 +17,9 @@ async def find_book_service(book_info : dict, user_info : dict):
         '--option', 'getbook'
     ]
     #our process lets call it librarian#
-    print("start")
     librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
     stdout , stderr = await librarian.communicate()
     print(stdout.decode(),stderr.decode())
-    tmp = {
-        'status' : 'success',
-        'message' : 'selenium script success',
-        'file_path' : 'none'
-    }
     return f'{search_title} by {search_author}'
 
 async def main():
