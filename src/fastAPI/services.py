@@ -1,15 +1,16 @@
-import asyncio
+import asyncio , sys
 #from src.automation.book_bot import book_bot
 
-
+### DO NOT RUN WITH RELOAD ####
 async def find_book_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
     discord_user = user_info['username']
 
     #arguments for book_bot#
+    system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
     args = [
-        'python', '-m',
+        system_specific, '-m',
         'src.automation.book_bot',
         '--search', f'{search_title} by {search_author}',
         '--user', f'{discord_user}',
@@ -19,7 +20,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     print("start")
     librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
     stdout , stderr = await librarian.communicate()
-    #print(stdout.decode(),stderr.decode())
+    print(stdout.decode(),stderr.decode())
     tmp = {
         'status' : 'success',
         'message' : 'selenium script success',
@@ -27,27 +28,13 @@ async def find_book_service(book_info : dict, user_info : dict):
     }
     return f'{search_title} by {search_author}'
 
-'''
-import asyncio
+async def main():
+    book_stuff = {
+        'title' : 'orign',
+        'author' : 'dan brown'
+    }
+    userr = {'username' : 'mitch'}
+    t = await find_book_service(book_stuff,userr)
+if __name__ == '__main__':
 
-async def run_selenium_script():
-    # Define the command-line arguments to run the Selenium script
-    args = [
-        "python", "-m", "src.module.file",  # Path to your Selenium script
-        "--a", "A",                        # Command-line argument 1
-        "--b", "B",                        # Command-line argument 2
-        "--c", "C"                         # Command-line argument 3
-    ]
-    
-    # Run the Selenium script asynchronously using asyncio
-    process = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-
-    # Capture the output and error (if any)
-    stdout, stderr = await process.communicate()
-
-    if stderr:
-        return f"Error: {stderr.decode()}"
-    
-    return stdout.decode()
-
-'''
+    asyncio.run(main())

@@ -23,28 +23,34 @@ class Book(commands.Cog):
         ####
         #expected payload 
         unknown_book = {
-            'title' : {title},
-            'author' : {author}
+            'title' : title,
+            'author' : author
         }
-        user_details = { 'username' : {user_name}}
+        user_details = { 'username' : user_name}
         data = {
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
+        print(type(unknown_book), type(title))
+        return
         test_url = 'http://localhost:8000/find_book'
         print("no")
         try:
             print("?")
+
             async with aiohttp.ClientSession() as session:
                 print(session)
                 print(test_url)
                 print(data)
-                async with session.post(test_url, json=data) as response:
-                    print("?")
-                    if response.status == 200:
-                        await interaction.followup.send("file")
-                    else:
-                        await interaction.followup.send("fail")
+                try:
+                    async with session.post(test_url, json={'unknown_book' : {'title' : 'origin' , 'author' : 'dan brown'}, 'user_details' : {'username' :'foogz'}}) as response:
+                        print("?")
+                        if response.status == 200:
+                            await interaction.followup.send("file")
+                        else:
+                            await interaction.followup.send("fail")
+                except Exception as e:
+                    print(f'{e}')
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:
