@@ -24,9 +24,15 @@ def discord_file_creation(username : str, title : str, author : str):
     #####
     with open(target_file , 'rb') as file:
         _, file_extension = os.path.splitext(target_file)
-        attached_file = discord.File(fp = file, filename=f'{title} by {author}{file_extension}')
+        attached_file = discord.File(fp = file)#, filename=f'{title} by {author}{file_extension}')
     return attached_file
 
+def book_search_output(username:str):
+    user_folder = os.path.join(Download_dir,username)
+    #output.txt has results
+    search_result = "output.txt"
+    with open(os.path.join(user_folder,search_result) , 'r') as file:
+        return file.readlines()
 if __name__ == '__main__':
     #print(discord_file_creation('fungasm.'))
     print("not meant to be ran alone")

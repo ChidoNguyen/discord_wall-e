@@ -19,8 +19,8 @@ intents.guilds = True
 bot = commands.Bot(command_prefix='!',intents=intents)
 
 async def load_cogs():
-    await bot.load_extension("src.discord.cogs.book")
-    await bot.load_extension("src.discord.cogs.help")
+    await bot.load_extension("src.discord_bot.cogs.book")
+    await bot.load_extension("src.discord_bot.cogs.help")
 
 
 @bot.event

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Dict , Any
-from ..services import find_book_service
+from ..services import find_book_service , find_book_service_roids
 #### Routes - > Input validation / Handlings #####
 router = APIRouter()
 
@@ -42,3 +42,17 @@ async def find_book(unknown_book : UnknownBook, user_details : UserDetails):
     if novel is not None:
         return {"message" : novel}
     return None
+
+@router.post("/find_book_roids")
+async def find_book_roids(unknown_book : UnknownBook, user_details : UserDetails):
+    book_info = unknown_book.model_dump()
+    user_info = user_details.model_dump()
+    novel = await find_book_service_roids(book_info,user_info)
+    #print(novel)
+    if novel is not None:
+        return {"message" : novel}
+    return None
+
+@router.post("/pick")
+async def pick_book():
+    return "done"
