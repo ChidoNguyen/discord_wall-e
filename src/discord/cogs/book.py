@@ -19,7 +19,7 @@ class Book(commands.Cog):
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
-        print(f'{title} {author}')
+        #print(f'{title} {author}')
         await interaction.followup.send("Should be file.")
         ####
         #expected payload 
