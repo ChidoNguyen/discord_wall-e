@@ -9,32 +9,53 @@ from discord.ui import View, Button
 import aiohttp
 
 class BookOptions(View):
-    def __init__(self, links: list):
+    def __init__(self, links: list , interaction : discord.Interaction):
         super().__init__()
         self.links = links
+        self.interaction = interaction
 
         for idx,url in enumerate(links):
-            self.add_item(ButtonEmbeddedLink(label=str(idx+1),user_option=url))
+            new_button =ButtonEmbeddedLink(label=str(idx+1),user_option=url,parent_view = self)
+            self.add_item(new_button)
+
+    async def disable_all_buttons(self):
+        for butts in self.children:
+            if isinstance(butts,Button):
+                butts.disabled = True
+        await self.interaction.response.edit_message(view=self)
 
 class ButtonEmbeddedLink(Button):
-    def __init__(self , label , user_option : str):
+    def __init__(self , label , user_option : str ,  parent_view : BookOptions):
         super().__init__(label = label, style = discord.ButtonStyle.primary)
         self.user_option = user_option
+        self.parent_view = parent_view
+
     async def callback(self,interaction : discord.Interaction):
         #should fire off the book request
-        username = interaction.user.name
+        print("clicked")
+        user_name = interaction.user.name
+        unknown_book = {
+            'title' : self.user_option,
+            'author' : self.user_option
+        }
+        user_details = { 'username' : user_name}
         data = {
-            'user_details' : {'username' : username},
-            'unknown_book' : { 'title' : self.user_option , 'author' : self.user_option}
+            'unknown_book' : unknown_book,
+            'user_details' : user_details
         }
         test_url = "http://localhost:8000/pick"
-        await interaction.response.defer(thinking=True)
+        await interaction.response.defer()
+        ####
+        await self.parent_view.disable_all_buttons()
+        ###
         try:
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.post(url=test_url, json = data) as response:
+                    async with session.post(url=test_url, json= data) as response:
+                        job_status = await response.json()
+                        to_be_attached = discord_file_creation(user_name)
                         if response.status == 200:
-                            await interaction.followup.send("sup")
+                            await interaction.followup.send(f'<finished>', file=to_be_attached)
                         else:
                             await interaction.followup.send("fail")
                 except Exception as e:
@@ -120,7 +141,7 @@ class Book(commands.Cog):
                         job_status = await response.json()
                         if response.status == 200 and job_status is not None:
                             search_results = book_search_output(user_name)
-                            option_view = BookOptions(search_results)
+                            option_view = BookOptions(search_results,interaction)
                             await interaction.followup.send("test",view = option_view)
                         else:
                             await interaction.followup.send("Failed to fetch file.")

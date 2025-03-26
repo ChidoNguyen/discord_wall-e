@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 Download_dir = os.getenv('DOWNLOAD_DIR')
 
-def discord_file_creation(username : str, title : str, author : str):
+def discord_file_creation(username : str, title : str = None, author : str  = None):
     #get path
     #load files
     #check c time
