@@ -25,12 +25,17 @@ class BookOptions(View):
         og_resp = await self.interaction.original_response()
         await og_resp.edit(content = '<In progress>',view=self)
 
+    async def attach_file(self,discord_file):
+        self.clear_items()
+        og_resp = await self.interaction.original_response()
+        await og_resp.edit(content='<Finished>', attachments=[discord_file])
+
 class ButtonEmbeddedLink(Button):
     def __init__(self , label , user_option : str ,  parent_view : BookOptions):
         super().__init__(label = label, style = discord.ButtonStyle.primary)
         self.user_option = user_option
         self.parent_view = parent_view
-
+        
     async def callback(self,interaction : discord.Interaction):
         #should fire off the book request
         user_name = interaction.user.name
@@ -55,7 +60,9 @@ class ButtonEmbeddedLink(Button):
                         job_status = await response.json()
                         to_be_attached = discord_file_creation(user_name)
                         if response.status == 200:
-                            await interaction.followup.send(f'<finished>', file=to_be_attached)
+                            await self.parent_view.attach_file(to_be_attached)
+
+                            #await interaction.followup.send(f'<finished>', file=to_be_attached)
                         else:
                             await interaction.followup.send("fail")
                 except Exception as e:
@@ -121,7 +128,7 @@ class Book(commands.Cog):
 
     @app_commands.command(name='findbook_on_roids', description="Same as find books, but gives you some options for books to pick from.")
     @app_commands.describe(title='title',author='author (optional)')
-    async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = None):
+    async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
         unknown_book = {
             'title' : title,

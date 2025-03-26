@@ -13,7 +13,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
-        '--search', f'{search_title} by {search_author}',
+        '--search', f'{search_title} {search_author}',
         '--user', f'{discord_user}',
         '--option', 'getbook'
     ]
@@ -30,7 +30,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
     if result.get('status') == 'success':
-        return f'{search_title} by {search_author}'
+        return f'{search_title}{search_author}'
     return None # assuming if not success then failure
 
 
@@ -47,7 +47,7 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
-        '--search', f'{search_title} by {search_author}',
+        '--search', f'{search_title} {search_author}',
         '--user', f'{discord_user}',
         '--option', 'getbook-adv'
     ]
@@ -64,7 +64,7 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
     if result.get('status') == 'success':
-        return f'{search_title} by {search_author}'
+        return f'{search_title} {search_author}'
     return None # assuming if not success then failure
 
 async def find_book_options(book_info : dict, user_info : dict):
@@ -77,7 +77,7 @@ async def find_book_options(book_info : dict, user_info : dict):
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
-        '--search', f'{search_title} by {search_author}',
+        '--search', f'{search_title} {search_author}',
         '--user', f'{discord_user}',
         '--option', 'pick'
     ]
