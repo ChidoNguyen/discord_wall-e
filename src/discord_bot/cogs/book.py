@@ -7,7 +7,7 @@ from ..utils import discord_file_creation , book_search_output
 from discord.ui import View, Button
 
 import aiohttp
-
+import os
 class BookOptions(View):
     def __init__(self, links: list , interaction : discord.Interaction):
         super().__init__()
@@ -59,7 +59,7 @@ class ButtonEmbeddedLink(Button):
                     async with session.post(url=test_url, json= data) as response:
                         job_status = await response.json()
                         to_be_attached = discord_file_creation(user_name)
-                        if response.status == 200:
+                        if response.status == 200 and job_status is not None:
                             await self.parent_view.attach_file(to_be_attached)
 
                             #await interaction.followup.send(f'<finished>', file=to_be_attached)
@@ -74,6 +74,11 @@ class Book(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
         self.user_sessions = {}
+        self.api = os.getenv("API_ENDPOINT")
+        self.api_routes = {
+            'findbook' : '/find_book',
+            'findbook_roids' : '/find_book_roids'
+        }
     """
     getbook used with 
     we would normally split off to webserver to execute script here
@@ -84,9 +89,7 @@ class Book(commands.Cog):
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
-        #print(f'{title} {author}')
-        #expected payload 
-        
+ 
         unknown_book = {
             'title' : title,
             'author' : author
@@ -96,15 +99,16 @@ class Book(commands.Cog):
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
-        test_url = 'http://localhost:8000/find_book'
+        req_url = self.api + self.api_routes['findbook']
+
         try:
 
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.post(test_url, json=data) as response:
+                    async with session.post(req_url, json=data) as response:
                         job_status = await response.json()
                         if response.status == 200 and job_status is not None:
-                            to_be_attached = discord_file_creation(username = user_name, title = title,author = author)
+                            to_be_attached = discord_file_creation(user_name)
                             original_message = await interaction.original_response()
                             await original_message.edit(content=
                                 f'{original_message.content}\n<Finished> {interaction.user.mention}',
@@ -139,12 +143,13 @@ class Book(commands.Cog):
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
-        test_url = 'http://localhost:8000/find_book_roids'
+        req_url = self.api + self.api_routes['findbook_roids']
+        #test_url = 'http://localhost:8000/find_book_roids'
         await interaction.response.send_message("Working on it.")
         try:
             async with aiohttp.ClientSession() as session:
                 try:
-                    async with session.post(test_url, json=data) as response:
+                    async with session.post(req_url, json=data) as response:
                         job_status = await response.json()
                         if response.status == 200 and job_status is not None:
                             search_results = book_search_output(user_name)

@@ -1,4 +1,3 @@
-import asyncio , sys
 from fastapi import FastAPI
 from .routes.routes import router as api_endpoints
 

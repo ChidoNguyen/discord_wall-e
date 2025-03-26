@@ -59,7 +59,6 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     except asyncio.TimeoutError:
         print("find_book_service_on_roid terminated for taking too long")
         return None
-    #print(stdout.decode(),stderr.decode())
     stdout_decode = stdout.decode()
     stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
@@ -97,14 +96,3 @@ async def find_book_options(book_info : dict, user_info : dict):
         return result
     return None # assuming if not success then failure    
 
-#######
-async def main():
-    book_stuff = {
-        'title' : 'orign',
-        'author' : 'dan brown'
-    }
-    userr = {'username' : 'mitch'}
-    t = await find_book_service(book_stuff,userr)
-
-if __name__ == '__main__':
-    asyncio.run(main())

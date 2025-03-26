@@ -1,5 +1,4 @@
 
-import sys
 import os
 import argparse
 import json
@@ -43,33 +42,32 @@ def book_bot():
         tmp = {"status" : "failure" , "message" : "Invalid arguments"}
         print(json.dumps(tmp))
         return None
-        sys.exit(1)
 
     #bot options check
     if bot_option not in BOT_SETTINGS:
-        print(f'Invalid bot option. Expected "getbook" , "getbook-adv", "pick" .')
-        sys.exit(1)
+        print(json.dumps({"status" : "failure" , "message" : "Invalid bot option."}))
+        return None
 
     #initialize selenium webdriver 
     bot_driver,user_folder = auto_bot(bot_username)
 
     #download limit check
     if max_limit(bot_driver):
-        print(f'Download limit reached.')
-        sys.exit(10)
+        print(json.dumps({"status" : "failure" , "message" : "Download Limit Reached (wait or change accounts)."}))
+        return None
 
     outcome = None
     if bot_option != 'pick':
         bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
         #can check for tuple or None
         if bot_search_results is None:
-            print(f'Error in search scripts.')
-            sys.exit(1)
+            print(json.dumps({"status" : "failure" , "message" : "Error in selenium search script"}))
+            return None
 
         bot_driver , links = bot_search_results
         if not links:
-            print(f'No links can be found for the book.')
-            return
+            print(json.dumps({"status" : "failure" , "message" : "No links found for search query."}))
+            return None
         if bot_option == 'getbook':
             outcome = start_download(bot_driver,user_folder,links[0]) #auto download top link
         elif bot_option == 'getbook-adv':

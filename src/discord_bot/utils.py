@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 Download_dir = os.getenv('DOWNLOAD_DIR')
 
-def discord_file_creation(username : str, title : str = None, author : str  = None):
+def discord_file_creation(username : str):
     #get path
     #load files
     #check c time
@@ -23,8 +23,7 @@ def discord_file_creation(username : str, title : str = None, author : str  = No
             target_file , target_file_ctime = item_path, item_ctime
     #####
     with open(target_file , 'rb') as file:
-        _, file_extension = os.path.splitext(target_file)
-        attached_file = discord.File(fp = file)#, filename=f'{title} by {author}{file_extension}')
+        attached_file = discord.File(fp = file)
     return attached_file
 
 def book_search_output(username:str):
@@ -34,6 +33,5 @@ def book_search_output(username:str):
     with open(os.path.join(user_folder,search_result) , 'r') as file:
         return file.readlines()
 if __name__ == '__main__':
-    #print(discord_file_creation('fungasm.'))
     print("not meant to be ran alone")
     
