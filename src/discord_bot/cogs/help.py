@@ -14,7 +14,6 @@ class PingView(discord.ui.View):
         # Create buttons dynamically for 1-5 pings
         for i in range(1, 6):
             self.add_item(PingButton(label=str(i), count=i))
-
 class PingButton(discord.ui.Button):
     """Button that sends multiple pings based on its label."""
     def __init__(self, label: str, count: int):

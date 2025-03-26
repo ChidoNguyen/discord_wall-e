@@ -22,7 +22,8 @@ class BookOptions(View):
         for butts in self.children:
             if isinstance(butts,Button):
                 butts.disabled = True
-        await self.interaction.response.edit_message(view=self)
+        og_resp = await self.interaction.original_response()
+        await og_resp.edit(content = '<In progress>',view=self)
 
 class ButtonEmbeddedLink(Button):
     def __init__(self , label , user_option : str ,  parent_view : BookOptions):
@@ -32,11 +33,10 @@ class ButtonEmbeddedLink(Button):
 
     async def callback(self,interaction : discord.Interaction):
         #should fire off the book request
-        print("clicked")
         user_name = interaction.user.name
         unknown_book = {
             'title' : self.user_option,
-            'author' : self.user_option
+            'author' : None
         }
         user_details = { 'username' : user_name}
         data = {
@@ -73,7 +73,7 @@ class Book(commands.Cog):
 
     """
     @app_commands.command(name="findbook", description="Gets you a book.")
-    @app_commands.describe(title="title",author="author")
+    @app_commands.describe(title="title",author="author (optional)")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
@@ -120,8 +120,8 @@ class Book(commands.Cog):
             print(f"An unexpected error occurred: {e}")
 
     @app_commands.command(name='findbook_on_roids', description="Same as find books, but gives you some options for books to pick from.")
-    @app_commands.describe(title='title',author='author')
-    async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str):
+    @app_commands.describe(title='title',author='author (optional)')
+    async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = None):
         user_name = interaction.user.name
         unknown_book = {
             'title' : title,
@@ -142,7 +142,14 @@ class Book(commands.Cog):
                         if response.status == 200 and job_status is not None:
                             search_results = book_search_output(user_name)
                             option_view = BookOptions(search_results,interaction)
-                            await interaction.followup.send("test",view = option_view)
+                            ##### want to edit original interaction ###
+                            options_text = "Review and pick:\n"
+                            for (idx,url) in enumerate(search_results,start = 1):
+                                options_text += f'Option {idx} details [here](<{url.strip()}>).\n'
+                            og_response = await interaction.original_response()
+                            await og_response.edit(content=options_text, view=option_view)
+                            #####
+                            #await interaction.followup.send("test",view = option_view)
                         else:
                             await interaction.followup.send("Failed to fetch file.")
                 except Exception as e:

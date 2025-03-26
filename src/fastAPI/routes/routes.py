@@ -1,13 +1,14 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Dict , Any
+from typing import Dict , Any , Union
 from ..services import find_book_service , find_book_service_roids, find_book_options
 #### Routes - > Input validation / Handlings #####
 router = APIRouter()
 
 class UnknownBook(BaseModel):
     title: str
-    author: str
+    author : Union[None,str] = ""
+    #author: str = "" # want to show author option in book bot but make it optional
 
 class UserDetails(BaseModel):
     username : str
