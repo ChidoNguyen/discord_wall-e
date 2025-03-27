@@ -3,13 +3,14 @@ import sys
 import json
 #from src.automation.book_bot import book_bot
 ### DO NOT RUN WITH RELOAD ####
+system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
+
 async def find_book_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
     discord_user = user_info['username']
 
     #arguments for book_bot#
-    system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
@@ -43,7 +44,6 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     discord_user = user_info['username']
 
     #arguments for book_bot#
-    system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
@@ -72,7 +72,6 @@ async def find_book_options(book_info : dict, user_info : dict):
     discord_user = user_info['username']
 
     #arguments for book_bot#
-    system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
     args = [
         system_specific, '-m',
         'src.automation.book_bot',
