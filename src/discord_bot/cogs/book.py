@@ -86,7 +86,7 @@ class Book(commands.Cog):
 
     """
     @app_commands.command(name="findbook", description="Gets you a book.")
-    @app_commands.describe(title="title",author="author (optional)")
+    @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
@@ -131,7 +131,7 @@ class Book(commands.Cog):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-    @app_commands.command(name='findbook_on_roids', description="Same as find books, but gives you some options for books to pick from.")
+    @app_commands.command(name='findbook_on_roids', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
