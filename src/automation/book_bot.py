@@ -5,7 +5,7 @@ import json
 from src.automation.auto_bot_setup import auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
-from src.automation.auto_bot_util import max_limit
+from src.automation.auto_bot_util import max_limit , output_template
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
@@ -73,10 +73,8 @@ def book_bot():
         elif bot_option == 'getbook-adv':
             #dump our list of links to output.txt
             try:
-                with open(os.path.join(user_folder,"output.txt"), 'w') as f:
-                    for items in links:
-                        print(items, file= f)
-                f.close()
+                ###
+                output_template(bot_driver,user_folder,links)
                 outcome = True
             except Exception as e:
                 print(f'{e}')

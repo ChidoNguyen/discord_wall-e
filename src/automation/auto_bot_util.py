@@ -1,5 +1,9 @@
+import os
+import json
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def navigate_download_history(bot_webdriver):
     LIMIT_XPATH = {
@@ -31,3 +35,29 @@ def max_limit(bot_webdriver):
     down_limit = check_download_limit(navigate_download_history(bot_webdriver))
     bot_webdriver.get(homepage_url)
     return down_limit
+
+'''
+Util Function - Output_Template to modify search results
+Args : User folder for file access , list of url links
+'''
+def output_template(bot_webdriver,user_folder,links):
+    #need to build json-object
+    json_data = []
+    for url in links:
+        #access each link grab author / title info 
+        bot_webdriver.get(url)
+        title , author = None , None
+        try:
+            title = bot_webdriver.find_element(By.XPATH, '//h1[@itemprop= "name"]').text
+            author = bot_webdriver.find_element(By.XPATH, '//a[@class= "color1"][@title="Find all the author\'s book"]').text
+        except Exception as e:
+            print(f"prolly failed cause we're too fast {e}")
+        json_object = {
+            'link' : url,
+            'author' : author,
+            'title' : title
+        }
+        json_data.append(json_object)
+    
+    with open(os.path.join(user_folder,'results.json'),'w') as json_file:
+        json.dump(json_data,json_file,indent=4)

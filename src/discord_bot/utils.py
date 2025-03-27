@@ -1,5 +1,6 @@
 import os
 import discord
+import json
 from dotenv import load_dotenv
 
 #env vars#
@@ -29,9 +30,9 @@ def discord_file_creation(username : str):
 def book_search_output(username:str):
     user_folder = os.path.join(Download_dir,username)
     #output.txt has results
-    search_result = "output.txt"
-    with open(os.path.join(user_folder,search_result) , 'r') as file:
-        return file.readlines()
+    search_result = "results.json"
+    with open(os.path.join(user_folder,search_result) , 'r') as json_file:
+        return json.load(json_file)
 if __name__ == '__main__':
     print("not meant to be ran alone")
     

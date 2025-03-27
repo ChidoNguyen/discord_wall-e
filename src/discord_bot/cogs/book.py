@@ -14,7 +14,8 @@ class BookOptions(View):
         self.links = links
         self.interaction = interaction
 
-        for idx,url in enumerate(links):
+        for idx,json_data in enumerate(links):
+            url = json_data['link']
             new_button =ButtonEmbeddedLink(label=str(idx+1),user_option=url,parent_view = self)
             self.add_item(new_button)
 
@@ -156,8 +157,12 @@ class Book(commands.Cog):
                             option_view = BookOptions(search_results,interaction)
                             ##### want to edit original interaction ###
                             options_text = "Review and pick:\n"
-                            for (idx,url) in enumerate(search_results,start = 1):
-                                options_text += f'Option {idx} details [here](<{url.strip()}>).\n'
+                            for (idx,json_data) in enumerate(search_results,start = 1):
+                                #link/author/title in json data
+                                url = json_data['link']
+                                author = json_data['author']
+                                title = json_data['title']
+                                options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
                             og_response = await interaction.original_response()
                             await og_response.edit(content=options_text, view=option_view)
                             #####
