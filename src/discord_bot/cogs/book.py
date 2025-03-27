@@ -183,5 +183,12 @@ class Book(commands.Cog):
             print(f"An unexpected error occurred: {e}")
         return
     
+    @app_commands.command(name="whisper_in_your_ear" , description="ill dm you secrets")
+    @app_commands.describe(what='what',who='who')
+    async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
+        user = interaction.user.id
+        tmp = await self.bot.fetch_user(user)
+        await interaction.response.send_message(f'{what} {who}')
+        await tmp.send("hello")
 async def setup(bot):
     await bot.add_cog(Book(bot))
