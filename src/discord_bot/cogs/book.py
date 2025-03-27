@@ -75,11 +75,24 @@ class Book(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
         self.user_sessions = {}
+        self.cog_api_session = aiohttp.ClientSession()
         self.api = os.getenv("API_ENDPOINT")
         self.api_routes = {
             'findbook' : '/find_book',
             'findbook_roids' : '/find_book_roids'
         }
+    
+    def json_payload(self,*, user : str , title : str , author : str = ""):
+        unknown_book = {
+            'title' : title,
+            'author' : author
+        }
+        user_details = { 'username' : user}
+        data = {
+            'unknown_book' : unknown_book,
+            'user_details' : user_details
+        }
+        return data
     """
     getbook used with 
     we would normally split off to webserver to execute script here
@@ -186,9 +199,26 @@ class Book(commands.Cog):
     @app_commands.command(name="whisper_in_your_ear" , description="ill dm you secrets")
     @app_commands.describe(what='what',who='who')
     async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
-        user = interaction.user.id
-        tmp = await self.bot.fetch_user(user)
-        await interaction.response.send_message(f'{what} {who}')
-        await tmp.send("hello")
+        user = interaction.user
+        await user.send("this is a dm")
+        await interaction.response.send_message(f'{what}{who}',ephemeral=True)
+
+
+        
+        ######## Generic Send Request ###########
+        #set up the connection
+        data = self.json_payload(user= user.name, title= what, author= who)
+        url = self.api + self.api_routes['findbook']
+        try:
+            async with self.cog_api_session.post(url,json=data) as response:
+                resp_status = await response.json()
+                if response.status == 200 and resp_status is not None:
+                    to_be_attached = discord_file_creation(user.name)
+                    await user.send("You wanted..." , file=to_be_attached)
+        except Exception as e:
+            print(e)
+            await interaction.followup.send("Fail")
+        return
+
 async def setup(bot):
     await bot.add_cog(Book(bot))

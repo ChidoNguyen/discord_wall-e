@@ -48,45 +48,55 @@ def book_bot():
         print(json.dumps({"status" : "failure" , "message" : "Invalid bot option."}))
         return None
 
-    #initialize selenium webdriver 
+    #initialize selenium webdriver
     bot_driver,user_folder = auto_bot(bot_username)
 
     #download limit check
     if max_limit(bot_driver):
         print(json.dumps({"status" : "failure" , "message" : "Download Limit Reached (wait or change accounts)."}))
+        bot_driver.quit()
         return None
 
-    outcome = None
-    if bot_option != 'pick':
-        bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
-        #can check for tuple or None
-        if bot_search_results is None:
-            print(json.dumps({"status" : "failure" , "message" : "Error in selenium search script"}))
-            return None
+    ### clean up assurance ##
+    try:
+        outcome = None
+        if bot_option != 'pick':
+            bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
+            #can check for tuple or None
+            if bot_search_results is None:
+                print(json.dumps({"status" : "failure" , "message" : "Error in selenium search script"}))
+                return None
 
-        bot_driver , links = bot_search_results
-        if not links:
-            print(json.dumps({"status" : "failure" , "message" : "No links found for search query."}))
-            return None
-        if bot_option == 'getbook':
-            outcome = start_download(bot_driver,user_folder,links[0]) #auto download top link
-        elif bot_option == 'getbook-adv':
-            #dump our list of links to output.txt
-            try:
-                ###
-                output_template(bot_driver,user_folder,links)
-                outcome = True
-            except Exception as e:
-                print(f'{e}')
-    else:
-        #its our pick choose/load proper url (?)
-        outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
+            bot_driver , links = bot_search_results
+            if not links:
+                print(json.dumps({"status" : "failure" , "message" : "No links found for search query."}))
+                return None
+            if bot_option == 'getbook':
+                outcome = start_download(bot_driver,user_folder,links[0]) #auto download top link
+            elif bot_option == 'getbook-adv':
+                #dump our list of links to output.txt
+                try:
+                    ###
+                    output_template(bot_driver,user_folder,links)
+                    outcome = True
+                except Exception as e:
+                    print(f'{e}')
+        else:
+            #its our pick choose/load proper url (?)
+            outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
+        
+        if bot_driver and outcome:
+            print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
+            return True
+        return None
     
-    if bot_driver and outcome:
-        bot_driver.quit()
-        print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
-        return True
-    return None
+    except Exception as e:
+        print(json.dumps({'status':'failure' , 'message' : e}))
+        return None
+    finally:
+        if 'bot_driver' in locals() and bot_driver:
+            bot_driver.quit()
+
 
 if __name__ == '__main__':
     book_bot()

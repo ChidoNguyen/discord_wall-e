@@ -1,0 +1,67 @@
+```
+**Discord Bot's aiohttp.ClientSession Management**
+
+* **Single Instance:**
+    * Create a single `aiohttp.ClientSession` within your Discord bot cog.
+    * Example:
+        ```python
+        import aiohttp
+        import discord
+        from discord.ext import commands
+
+        class Publication(commands.Cog):
+            def __init__(self, bot):
+                self.bot = bot
+                self.session = aiohttp.ClientSession()
+
+            async def cog_unload(self):
+                await self.session.close()
+
+            @discord.app_commands.command(name="publication", description="Get publication material.")
+            async def publication(self, interaction, route: str, args: str):
+                url = f"http://your-api-server/publication/{route}"
+                data = {"args": args}
+                try:
+                    async with self.session.post(url, json=data) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            await interaction.response.send_message(result["message"])
+                            # handle attachment
+                        else:
+                            await interaction.response.send_message("Error fetching publication.")
+                except aiohttp.ClientError as e:
+                    print(f"aiohttp error: {e}")
+                    await interaction.response.send_message("An error occurred during the request.")
+                except asyncio.TimeoutError:
+                    await interaction.response.send_message("The request timed out.")
+
+        async def setup(bot):
+            await bot.add_cog(Publication(bot))
+        ```
+* **Scope:**
+    * The session should exist for the lifetime of the bot.
+    * Create it when the bot starts and close it when the bot shuts down (using `cog_unload`).
+* **Reasoning:**
+    * Improves performance by reusing connections.
+    * Simplifies connection management.
+    * All requests are local (localhost/127.0.0.1), so a single session is sufficient.
+* **Error Handling:**
+    * Add try/except blocks around your session.post calls to handle aiohttp exceptions.
+
+**FastAPI Server and Selenium**
+
+* **Selenium:**
+    * Selenium handles its own internal connection management.
+    * Ensure that selenium drivers are properly closed within the selenium scripts.
+* **FastAPI:**
+    * The FastAPI server coordinates and triggers Selenium scripts via subprocesses.
+    * The fastAPI server itself does not need a client session object.
+* **Subprocess Communication:**
+    * Communication between FastAPI and Selenium is via `stdout`, which is appropriate for local subprocess interaction.
+
+**Key Considerations**
+
+* **Localhost:** Using localhost/127.0.0.1 minimizes network overhead.
+* **Resource Cleanup:** Close the `aiohttp.ClientSession` and Selenium drivers properly.
+* **Error Handling:** Implement robust error handling in both the bot and Selenium scripts.
+```
