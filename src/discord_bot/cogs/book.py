@@ -103,36 +103,23 @@ class Book(commands.Cog):
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         await interaction.response.send_message(f'Looking for {title} by {author}')
- 
-        unknown_book = {
-            'title' : title,
-            'author' : author
-        }
-        user_details = { 'username' : user_name}
-        data = {
-            'unknown_book' : unknown_book,
-            'user_details' : user_details
-        }
+        data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook']
 
         try:
+            async with self.cog_api_session.post(req_url, json=data) as response:
+                job_status = await response.json()
+                if response.status == 200 and job_status is not None:
+                    to_be_attached = discord_file_creation(user_name)
+                    original_message = await interaction.original_response()
+                    await original_message.edit(content=
+                        f'{original_message.content}\n<Finished> {interaction.user.mention}',
+                        attachments=[to_be_attached]
+                        )
+                    #await interaction.followup.send("file",file=to_be_attached)
+                else:
+                    await interaction.followup.send("Failed to fetch file.")
 
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.post(req_url, json=data) as response:
-                        job_status = await response.json()
-                        if response.status == 200 and job_status is not None:
-                            to_be_attached = discord_file_creation(user_name)
-                            original_message = await interaction.original_response()
-                            await original_message.edit(content=
-                                f'{original_message.content}\n<Finished> {interaction.user.mention}',
-                                attachments=[to_be_attached]
-                                )
-                            #await interaction.followup.send("file",file=to_be_attached)
-                        else:
-                            await interaction.followup.send("Failed to fetch file.")
-                except Exception as e:
-                    print(f'{e}')
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:
@@ -148,42 +135,30 @@ class Book(commands.Cog):
     @app_commands.describe(title='title',author='author (optional)')
     async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
-        unknown_book = {
-            'title' : title,
-            'author' : author
-        }
-        user_details = { 'username' : interaction.user.name}
-        data = {
-            'unknown_book' : unknown_book,
-            'user_details' : user_details
-        }
+        data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook_roids']
-        #test_url = 'http://localhost:8000/find_book_roids'
+
         await interaction.response.send_message("Working on it.")
         try:
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.post(req_url, json=data) as response:
-                        job_status = await response.json()
-                        if response.status == 200 and job_status is not None:
-                            search_results = book_search_output(user_name)
-                            option_view = BookOptions(search_results,interaction)
-                            ##### want to edit original interaction ###
-                            options_text = "Review and pick:\n"
-                            for (idx,json_data) in enumerate(search_results,start = 1):
-                                #link/author/title in json data
-                                url = json_data['link']
-                                author = json_data['author']
-                                title = json_data['title']
-                                options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
-                            og_response = await interaction.original_response()
-                            await og_response.edit(content=options_text, view=option_view)
-                            #####
-                            #await interaction.followup.send("test",view = option_view)
-                        else:
-                            await interaction.followup.send("Failed to fetch file.")
-                except Exception as e:
-                    print(f'{e}')
+            async with self.cog_api_session.post(req_url, json=data) as response:
+                job_status = await response.json()
+                if response.status == 200 and job_status is not None:
+                    search_results = book_search_output(user_name)
+                    option_view = BookOptions(search_results,interaction)
+                    ##### want to edit original interaction ###
+                    options_text = "Review and pick:\n"
+                    for (idx,json_data) in enumerate(search_results,start = 1):
+                        #link/author/title in json data
+                        url = json_data['link']
+                        author = json_data['author']
+                        title = json_data['title']
+                        options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
+                    og_response = await interaction.original_response()
+                    await og_response.edit(content=options_text, view=option_view)
+                    #####
+                    #await interaction.followup.send("test",view = option_view)
+                else:
+                    await interaction.followup.send("Failed to fetch file.")
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:
@@ -202,11 +177,6 @@ class Book(commands.Cog):
         user = interaction.user
         await user.send("this is a dm")
         await interaction.response.send_message(f'{what}{who}',ephemeral=True)
-
-
-        
-        ######## Generic Send Request ###########
-        #set up the connection
         data = self.json_payload(user= user.name, title= what, author= who)
         url = self.api + self.api_routes['findbook']
         try:
@@ -215,10 +185,18 @@ class Book(commands.Cog):
                 if response.status == 200 and resp_status is not None:
                     to_be_attached = discord_file_creation(user.name)
                     await user.send("You wanted..." , file=to_be_attached)
+        except aiohttp.ClientError as e:
+            print(f"A client error occurred: {e}")
+        except aiohttp.ClientConnectionError as e:
+            print(f"A connection error occurred: {e}")
+        except aiohttp.ClientResponseError as e:
+            print(f"A response error occurred: {e.status} - {e.message}")
+        except aiohttp.ClientTimeout as e:
+            print(f"A timeout error occurred: {e}")
         except Exception as e:
-            print(e)
-            await interaction.followup.send("Fail")
+            print(f"An unexpected error occurred: {e}")
         return
+
 
 async def setup(bot):
     await bot.add_cog(Book(bot))
