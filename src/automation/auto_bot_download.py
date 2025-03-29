@@ -20,7 +20,19 @@ def rename_book_file(book,author,user_folder):
         metadata = download_metadata(newest) # returns dict with author and title
         new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
         os.rename(newest, os.path.join(user_folder,new_title))      
-         
+        #######
+        def db_registration():
+            import sqlite3
+            db_file = "/Users/cheeds/Desktop/Python/discord_wall-e/epub_index.db"
+            con = sqlite3.connect(db_file)
+            cursor = con.cursor()
+            table_name = "digital_brain"
+            insert_sql = f'INSERT INTO {table_name} (title , author , user ) VALUES ( ? , ? , ? )'
+            head , tails = os.path.split(user_folder)
+            cursor.execute(insert_sql,(metadata['title'],metadata['author'],tails))
+            con.commit()
+            con.close()
+        db_registration()
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 

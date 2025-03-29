@@ -34,9 +34,6 @@ async def find_book_service(book_info : dict, user_info : dict):
         return f'{search_title}{search_author}'
     return None # assuming if not success then failure
 
-
-
-
 ########
 async def find_book_service_roids(book_info : dict, user_info : dict):
     search_title = book_info['title']
@@ -95,3 +92,14 @@ async def find_book_options(book_info : dict, user_info : dict):
         return result
     return None # assuming if not success then failure    
 
+
+
+
+async def metadata_extraction(book):
+    from ebooklib import epub
+
+    ebook = epub.read_epub(book)
+    author = ebook.get_metadata('DC','creator')[0][0]
+    title = ebook.get_metadata('DC', 'title')[0][0]
+
+    return { 'author' : author , 'title' : title}

@@ -88,16 +88,14 @@ class Book(commands.Cog):
             'author' : author
         }
         user_details = { 'username' : user}
+        
         data = {
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
-        return data
-    """
-    getbook used with 
-    we would normally split off to webserver to execute script here
 
-    """
+        return data
+
     @app_commands.command(name="findbook", description="Gets you a book.")
     @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
