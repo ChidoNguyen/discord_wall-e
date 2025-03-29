@@ -5,6 +5,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from ebooklib import epub
+
 def navigate_download_history(bot_webdriver):
     LIMIT_XPATH = {
         "download_history" : "//a[@href='/users/downloads']"
@@ -61,3 +63,10 @@ def output_template(bot_webdriver,user_folder,links):
     
     with open(os.path.join(user_folder,'results.json'),'w') as json_file:
         json.dump(json_data,json_file,indent=4)
+
+def download_metadata(target_file : str):
+    literature = epub.read_epub(target_file)
+    lit_author = literature.get_metadata('DC','creator')[0][0]
+    lit_title = literature.get_metadata('DC','title')[0][0]
+    
+    return { 'author' : lit_author , 'title' : lit_title }

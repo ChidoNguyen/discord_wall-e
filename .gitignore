@@ -409,3 +409,4 @@ myvenv
 *.DS_Store*
 *.ini*
 .env
+*.db

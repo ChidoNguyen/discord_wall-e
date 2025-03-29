@@ -5,6 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException , TimeoutException
 import os, time, re
 
+from src.automation.auto_bot_util import download_metadata
+
 #rawest form of "download"
 def rename_book_file(book,author,user_folder):
     try:
@@ -13,11 +15,15 @@ def rename_book_file(book,author,user_folder):
         if not all_files:
             raise OSError("Empty directory")
         newest = max(all_files, key = os.path.getctime)
-        os.rename(newest,os.path.join(user_folder, f'{book} by {author}.epub'))
+        #os.rename(newest,os.path.join(user_folder, f'{book} by {author}.epub'))
+        metadata = download_metadata(newest) # returns dict with author and title
+        new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
+        os.rename(newest, os.path.join(user_folder,new_title))       
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 
     return True
+
 
 def download_progress(user_folder, timeout_limit = 60):
     download_complete = False
