@@ -10,7 +10,8 @@ from src.automation.auto_bot_util import download_metadata
 #rawest form of "download"
 def rename_book_file(book,author,user_folder):
     try:
-        book = re.sub(r'[<>:"/\\|?*]', '', book) #replaces special chars with spaces
+        #book = re.sub(r'[<>:"/\\|?*]', '', book) #replaces special chars with spaces
+
         all_files = [os.path.join(user_folder, files) for files in os.listdir(user_folder)]
         if not all_files:
             raise OSError("Empty directory")
@@ -18,7 +19,8 @@ def rename_book_file(book,author,user_folder):
         #os.rename(newest,os.path.join(user_folder, f'{book} by {author}.epub'))
         metadata = download_metadata(newest) # returns dict with author and title
         new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
-        os.rename(newest, os.path.join(user_folder,new_title))       
+        os.rename(newest, os.path.join(user_folder,new_title))      
+         
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 
