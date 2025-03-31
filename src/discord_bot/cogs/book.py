@@ -177,8 +177,8 @@ class Book(commands.Cog):
     @app_commands.describe(what='what',who='who')
     async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
-        await user.send("this is a dm")
-        await interaction.response.send_message(f'{what}{who}',ephemeral=True)
+        await user.send("Just hold your horses...")
+        await interaction.response.send_message(f'{what} {who}',ephemeral=True)
         data = self.json_payload(user= user.name, title= what, author= who)
         url = self.api + self.api_routes['findbook']
         try:

@@ -2,7 +2,6 @@ import asyncio
 import sys
 import json
 import os
-import time
 import shutil
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot

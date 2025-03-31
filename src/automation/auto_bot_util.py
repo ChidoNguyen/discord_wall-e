@@ -7,7 +7,15 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from ebooklib import epub
 
-def navigate_download_history(bot_webdriver):
+def _navigate_download_history(bot_webdriver):
+    """
+    Function : Navigate to our target sites download history
+    
+    Arguments : webdriver
+
+    Returns : webdriver or None
+    """
+
     LIMIT_XPATH = {
         "download_history" : "//a[@href='/users/downloads']"
     }
@@ -22,7 +30,14 @@ def navigate_download_history(bot_webdriver):
         print("Download history failed to follow URL.")
     return bot_webdriver
 
-def check_download_limit(bot_webdriver):
+def _check_download_limit(bot_webdriver):
+    """
+    Function : Checks to see if we have hit download limit
+    
+    Arguments : webdriver
+
+    Returns : bool
+    """
     try:
         out_of_ten = bot_webdriver.find_element(By.CSS_SELECTOR , 'div.m-v-auto.d-count')
     except NoSuchElementException as e:
@@ -32,17 +47,31 @@ def check_download_limit(bot_webdriver):
         return True
     return False
 
-def max_limit(bot_webdriver):
+def check_max_limit(bot_webdriver):
+    """
+    Function : Wrapper function to navigate and check download limit
+    
+    Arguments : webdriver
+
+    Returns : bool
+    """
     homepage_url = bot_webdriver.current_url
-    down_limit = check_download_limit(navigate_download_history(bot_webdriver))
+    down_limit = _check_download_limit(_navigate_download_history(bot_webdriver))
     bot_webdriver.get(homepage_url)
     return down_limit
 
-'''
-Util Function - Output_Template to modify search results
-Args : User folder for file access , list of url links
-'''
-def output_template(bot_webdriver,user_folder,links):
+
+def _output_template(bot_webdriver,user_folder,links):
+    """
+    Function : formats our results from search into json
+    
+    Arguments : 
+        bot_webdriver : webdriver
+        user_folder : str - full path to where downloading/saving occurs
+        links - List(str) - a list of strings 
+
+    Returns : -
+    """
     #need to build json-object
     json_data = []
     for url in links:
@@ -64,7 +93,14 @@ def output_template(bot_webdriver,user_folder,links):
     with open(os.path.join(user_folder,'results.json'),'w') as json_file:
         json.dump(json_data,json_file,indent=4)
 
-def download_metadata(target_file : str):
+def _get_download_metadata(target_file : str):
+    """
+    Function : extracts metadata for epub files
+    
+    Arguments : target_file - str - full path to file
+
+    Returns : dictionary with keys author/title and value associated to them
+    """
     literature = epub.read_epub(target_file)
     lit_author = literature.get_metadata('DC','creator')[0][0]
     lit_title = literature.get_metadata('DC','title')[0][0]

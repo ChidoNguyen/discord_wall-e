@@ -1,5 +1,3 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from .book_bot_config import url as site_url
@@ -10,10 +8,16 @@ XPATH = {
         's_field' : "//input[@id= 'searchFieldx']",
         's_button' : "//button[@type= 'submit' and @aria-label='Search']"
     }
-#Input + Clicks search returns web_driver if OK , None if errors
-def search_query_input(bot_webdriver, search_query):
+def _search_query_input(bot_webdriver, search_query):
+    """
+    Function : Automates the input of our search string into search input field
+    
+    Arguments : 
+        bot_webdriver : selenium webdriver 
+        search_query : str - what we're searching for  
 
-
+    Returns : webdriver or None
+    """
     try:
         search_field = bot_webdriver.find_element(By.XPATH, XPATH['s_field'])
     except NoSuchElementException as e:
@@ -22,7 +26,6 @@ def search_query_input(bot_webdriver, search_query):
     
     try:
         search_field.send_keys(search_query)
-        #chaining causes error when testing and safer to split
         search_button = bot_webdriver.find_element(By.XPATH, XPATH['s_button']).click()
     except NoSuchElementException as e:
         print(f'Error: {e}')
@@ -30,7 +33,17 @@ def search_query_input(bot_webdriver, search_query):
     
     return bot_webdriver
 
-def search_result(bot_webdriver):
+def _get_search_result(bot_webdriver):
+    """
+    Function : Extracts our search results max results set via global variable
+    
+    Arguments :
+        bot_webdriver : selenium webdriver
+
+    Returns : tuple(webdriver,list) or None
+        webdriver - selenium webdriver
+        List[str] - search results
+    """
     book_deets = {
         'book_card' : 'z-bookcard',
 
@@ -54,8 +67,17 @@ def search_result(bot_webdriver):
     
     return bot_webdriver , valid_links
 
-#returns driver + list of links if successful
+
 def bot_search(bot_webdriver, search_query):
-    search_outcome = search_query_input(bot_webdriver,search_query)
-    return search_result(search_outcome)
-   # return search_result(search_query_input(bot_webdriver,search_query))
+    """
+    Function : Wrapper function for search process
+    
+    Arguments :
+        bot_webdriver : - selenium webdriver
+        search_query: str - what we want to look up
+
+    Returns : tuple(webdriver,List(str)) or None
+    """
+    search_outcome = _search_query_input(bot_webdriver,search_query)
+    return _get_search_result(search_outcome)
+   

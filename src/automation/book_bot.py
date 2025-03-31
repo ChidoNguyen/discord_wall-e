@@ -1,11 +1,10 @@
 
-import os
 import argparse
 import json
-from src.automation.auto_bot_setup import auto_bot
+from src.automation.auto_bot_setup import create_auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
-from src.automation.auto_bot_util import max_limit , output_template
+from src.automation.auto_bot_util import _check_max_limit , _output_template
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
@@ -18,7 +17,17 @@ anyorder via keyword arguments
 --option
 
 '''
-def arg_parse():
+def _arg_parse():
+    """
+    Function : Parses our command line argument
+    
+    Arguments : COMMAND LINE ARGUMENTS
+        --search : str : full search query
+        --user : str : username
+        --option : str : getbook / getbook-adv / pick
+
+    Returns : parsed args or None(s)
+    """
     parser = argparse.ArgumentParser(description="book_bot_kwargs")
     #argument count 
     count = 3
@@ -33,8 +42,15 @@ def arg_parse():
     return args.user, args.search, args.option
 
 def book_bot():
+    """
+    Function : Our main "automation" bot logic
+    
+    Arguments : Command line arguments --option , --user , --search 
+
+    Returns : prints formatted messages as a form of "return" but essentially returns None and shuts down selenium driver. 
+    """
     #keyword arg parsing rather than positional args
-    bot_username, bot_search_terms,bot_option = arg_parse()
+    bot_username, bot_search_terms,bot_option = _arg_parse()
 
 
     if None in (bot_search_terms,bot_username,bot_option):
@@ -49,10 +65,10 @@ def book_bot():
         return None
 
     #initialize selenium webdriver
-    bot_driver,user_folder = auto_bot(bot_username)
+    bot_driver,user_folder = create_auto_bot(bot_username)
 
     #download limit check
-    if max_limit(bot_driver):
+    if _check_max_limit(bot_driver):
         print(json.dumps({"status" : "failure" , "message" : "Download Limit Reached (wait or change accounts)."}))
         bot_driver.quit()
         return None
@@ -77,7 +93,7 @@ def book_bot():
                 #dump our list of links to output.txt
                 try:
                     ###
-                    output_template(bot_driver,user_folder,links)
+                    _output_template(bot_driver,user_folder,links)
                     outcome = True
                 except Exception as e:
                     print(f'{e}')
