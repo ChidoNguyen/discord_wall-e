@@ -103,7 +103,6 @@ class Book(commands.Cog):
         await interaction.response.send_message(f'Looking for {title} by {author}')
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook']
-
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
                 job_status = await response.json()
@@ -117,7 +116,6 @@ class Book(commands.Cog):
                     #await interaction.followup.send("file",file=to_be_attached)
                 else:
                     await interaction.followup.send("Failed to fetch file.")
-
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:

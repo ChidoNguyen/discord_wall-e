@@ -1,7 +1,10 @@
-from fastapi import APIRouter
+import os
+from fastapi import APIRouter , BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict , Any , Union
-from ..services import find_book_service , find_book_service_roids, find_book_options
+
+from ..services import find_book_service , find_book_service_roids, find_book_options , to_the_vault
+
 #### Routes - > Input validation / Handlings #####
 router = APIRouter()
 
@@ -31,16 +34,17 @@ def template_api_response(status: str, message: str, data : Dict[str,Any] | None
     
     if error_details:
         response['error_details'] = error_details
-
     return response
+
 @router.post("/find_book")
-async def find_book(unknown_book : UnknownBook, user_details : UserDetails):
+async def find_book(unknown_book : UnknownBook, user_details : UserDetails, background_tasks : BackgroundTasks):
     #print("looking")
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_book_service(book_info,user_info)
     #print(novel)
     if novel is not None:
+        background_tasks.add_task(to_the_vault,user_info['username'])
         return {"message" : novel}
     return None
 

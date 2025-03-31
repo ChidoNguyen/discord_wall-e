@@ -410,3 +410,4 @@ myvenv
 *.ini*
 .env
 *.db
+*the_vault*

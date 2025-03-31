@@ -12,7 +12,8 @@ def make_table():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             author TEXT NOT NULL,
-            user TEXT NOT NULL
+            user TEXT NOT NULL,
+            UNIQUE( title , author )
         )
     ''')
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_title ON digital_brain(title)")
@@ -29,4 +30,3 @@ def grabstuff():
     conn.close()
     return
 
-grabstuff()

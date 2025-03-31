@@ -1,7 +1,14 @@
 import asyncio 
 import sys
 import json
+import os
+import time
+import shutil
+from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
+load_dotenv()
+THE_VAULT = os.getenv('THE_VAULT')
+DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
 ### DO NOT RUN WITH RELOAD ####
 system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
 
@@ -31,7 +38,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
     if result.get('status') == 'success':
-        return f'{search_title}{search_author}'
+        return f'{search_title} {search_author}'
     return None # assuming if not success then failure
 
 ########
@@ -95,7 +102,7 @@ async def find_book_options(book_info : dict, user_info : dict):
 
 
 
-async def metadata_extraction(book):
+""" async def metadata_extraction(book):
     from ebooklib import epub
 
     ebook = epub.read_epub(book)
@@ -103,3 +110,16 @@ async def metadata_extraction(book):
     title = ebook.get_metadata('DC', 'title')[0][0]
 
     return { 'author' : author , 'title' : title}
+ """
+async def to_the_vault(user):
+    #get the newest file in folder 
+    #move to the vault
+    try:
+        userfolder = os.path.join(DOWNLOAD_DIR,user)
+        dir_files = []
+        for files in os.listdir(userfolder):
+            dir_files.append(os.path.join(userfolder,files))
+        newest_file = max(dir_files,key=os.path.getctime)
+        shutil.move(newest_file,THE_VAULT)
+    finally:
+        return
