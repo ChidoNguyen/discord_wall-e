@@ -81,7 +81,13 @@ class Book(commands.Cog):
             'findbook' : '/find_book',
             'findbook_roids' : '/find_book_roids'
         }
-    
+    async def cog_unload(self):
+        try:
+            await self.cog_api_session.close()
+        except Exception as e:
+            print(f'Failed to close out client session for book extension - {e}')
+        finally:
+            print('Book unloaded.')
     def json_payload(self,*, user : str , title : str , author : str = ""):
         unknown_book = {
             'title' : title,

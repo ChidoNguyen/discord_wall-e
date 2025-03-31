@@ -2,10 +2,12 @@ import discord
 import os
 
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 
 load_dotenv()
 DiscordToken = os.getenv("DISCORD_TOKEN")
+Admin_ID = int(os.getenv("ADMIN_ID"))
 Janitors = int(os.getenv("JANITORS"))
 Personal_Test = int(os.getenv("PERSONAL_TEST"))
 ###Bot Persmissions###
@@ -16,7 +18,8 @@ intents.guilds = True
 #######################
 
 bot = commands.Bot(command_prefix='!',intents=intents)
-
+async def admin_check(interaction : discord.Interaction):
+    return interaction.user.id == Admin_ID
 async def load_cogs():
     await bot.load_extension("src.discord_bot.cogs.book")
     await bot.load_extension("src.discord_bot.cogs.help")
@@ -31,7 +34,18 @@ async def on_ready():
     #print(f'Logged in as {bot.user} in {server_name}.')
     await bot.tree.sync()
     print("Current loaded cogs: ",list(bot.cogs.keys()))
-
+@bot.event
+async def unauthorized_error(interaction : discord.Interaction, error):
+    if isinstance(error , app_commands.CheckFailure):
+        await interaction.response.send_message("You have no power here." , ephemeral=True)
+    else:
+        await interaction.response.send_message("Something is extra broken...")
+@bot.tree.command(name="killswitch",description = "fail safe")
+@app_commands.default_permissions(administrator=True)
+@app_commands.check(admin_check)
+async def kill_bot(interaction : discord.Interaction):
+    await interaction.response.send_message("Shutting down . . ." , ephemeral=True)
+    await bot.close()
 
 async def main():
     async with bot:

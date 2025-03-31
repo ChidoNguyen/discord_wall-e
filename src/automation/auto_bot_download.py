@@ -35,7 +35,7 @@ def rename_book_file(book,author,user_folder):
             con.commit()
             con.close()
         ##################### turn on later when live
-        #db_registration()
+        db_registration()
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 
