@@ -1,4 +1,6 @@
-import sys, os, time, json
+import os
+import time
+import json
 
 COOKIES = {
     'path' : "cookies",
@@ -15,7 +17,7 @@ COOKIES_PATH = os.path.join(BASE_DIR,COOKIES['path'])
 if not os.path.exists(COOKIES_PATH):
     os.makedirs(COOKIES_PATH)
 
-def valid_cookies():
+def _valid_cookies():
     cookies_json = None
     try:
         with open(os.path.join(COOKIES_PATH,COOKIES['fname']), 'r') as file:
@@ -29,7 +31,7 @@ def valid_cookies():
             return False
     return True
 
-def load_cookies(bot_webdriver):
+def _load_cookies(bot_webdriver):
     cookies_json = None
     try:
         with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'r') as file:
@@ -54,7 +56,7 @@ def load_cookies(bot_webdriver):
         print(f'Cookies failed to load. Error : {e}')
         return False
 
-def save_cookies(bot_webdriver):
+def _save_cookies(bot_webdriver):
     cookies = bot_webdriver.get_cookies()
     try:
         with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'w') as file:
