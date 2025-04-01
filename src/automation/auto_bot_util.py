@@ -2,8 +2,6 @@ import os
 import json
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from ebooklib import epub
 
@@ -47,7 +45,7 @@ def _check_download_limit(bot_webdriver):
         return True
     return False
 
-def check_max_limit(bot_webdriver):
+def _check_max_limit(bot_webdriver):
     """
     Function : Wrapper function to navigate and check download limit
     
