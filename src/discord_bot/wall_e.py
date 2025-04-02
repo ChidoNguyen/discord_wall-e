@@ -4,6 +4,7 @@ import os
 from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
+from discord.app_commands import CheckFailure
 
 load_dotenv()
 DiscordToken = os.getenv("DISCORD_TOKEN")
@@ -34,18 +35,19 @@ async def on_ready():
     #print(f'Logged in as {bot.user} in {server_name}.')
     await bot.tree.sync()
     print("Current loaded cogs: ",list(bot.cogs.keys()))
-@bot.event
-async def unauthorized_error(interaction : discord.Interaction, error):
-    if isinstance(error , app_commands.CheckFailure):
-        await interaction.response.send_message("You have no power here." , ephemeral=True)
-    else:
-        await interaction.response.send_message("Something is extra broken...")
+
 @bot.tree.command(name="killswitch",description = "fail safe")
 @app_commands.default_permissions(administrator=True)
 @app_commands.check(admin_check)
 async def kill_bot(interaction : discord.Interaction):
-    await interaction.response.send_message("Shutting down . . ." , ephemeral=True)
+    await interaction.response.send_message("Shutting down . . ." , ephemeral=True , delete_after = 15)
     await bot.close()
+@kill_bot.error
+async def unauthorized_error(interaction : discord.Interaction, error):
+    if isinstance(error , CheckFailure):
+        await interaction.response.send_message("You have no power here." , ephemeral=True , delete_after=15)
+    else:
+        await interaction.response.send_message("Something is extra broken...")
 
 async def main():
     async with bot:
