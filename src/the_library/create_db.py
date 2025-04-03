@@ -18,6 +18,7 @@ def make_table():
     ''')
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_title ON digital_brain(title)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_author ON digital_brain(author)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user ON digital_brain(user)")
     conn.commit()
     conn.close()
     print(f'Database {DB_PATH} created.')
@@ -30,3 +31,4 @@ def grabstuff():
     conn.close()
     return
 
+make_table()

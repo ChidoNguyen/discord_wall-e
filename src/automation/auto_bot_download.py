@@ -4,6 +4,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException , TimeoutException
 import os
 import time
+import shutil
 
 from src.automation.auto_bot_util import _get_download_metadata
 
@@ -25,13 +26,14 @@ def _rename_book_file(user_folder):
         newest = max(all_files, key = os.path.getctime)
         metadata = _get_download_metadata(newest)
         new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
-        os.rename(newest, os.path.join(user_folder,new_title))      
+        #os.rename(newest, os.path.join(user_folder,new_title))
+        shutil.move(newest,os.path.join(user_folder,new_title))
         ############################
         def db_registration():
             import sqlite3
             from dotenv import load_dotenv
             load_dotenv()
-            db_file = os.getenv('DB_FILE')
+            db_file = os.getenv('DB_PATH')
             con = sqlite3.connect(db_file)
             cursor = con.cursor()
             table_name = "digital_brain"

@@ -64,8 +64,6 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
         return None
     stdout_decode = stdout.decode()
     stderr_decode = stderr.decode()
-    print('somethinggggggggggg\n\n\n')
-    print(stdout_decode,stderr_decode)
     result = json.loads(stdout_decode)
     if result.get('status') == 'success':
         return f'{search_title} {search_author}'
