@@ -27,7 +27,7 @@ def _rename_book_file(user_folder):
         metadata = _get_download_metadata(newest)
         new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
         #os.rename(newest, os.path.join(user_folder,new_title))
-        shutil.move(newest,os.path.join(user_folder,new_title))
+        shutil.move(newest,os.path.join(user_folder,new_title)) # acts the same in windows and linux env. vs os.rename
         ############################
         def db_registration():
             import sqlite3
