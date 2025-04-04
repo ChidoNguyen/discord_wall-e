@@ -1,6 +1,7 @@
 import os
 import discord
 import json
+import shutil
 from dotenv import load_dotenv
 
 #env vars#
@@ -25,6 +26,8 @@ def discord_file_creation(username : str):
     #####
     with open(target_file , 'rb') as file:
         attached_file = discord.File(fp = file)
+    #append .finish after finishing
+    shutil.move(target_file,target_file + ".finish")
     return attached_file
 
 def book_search_output(username:str):

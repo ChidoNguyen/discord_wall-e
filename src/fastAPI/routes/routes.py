@@ -43,7 +43,6 @@ async def find_book(unknown_book : UnknownBook, user_details : UserDetails, back
     novel = await find_book_service(book_info,user_info)
     #print(novel)
     if novel is not None:
-        background_tasks.add_task(to_the_vault,user_info['username'])
         return {"message" : novel}
     return None
 

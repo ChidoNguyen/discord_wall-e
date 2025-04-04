@@ -27,7 +27,27 @@ def _rename_book_file(user_folder):
         metadata = _get_download_metadata(newest)
         new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
         #os.rename(newest, os.path.join(user_folder,new_title))
-        shutil.move(newest,os.path.join(user_folder,new_title)) # acts the same in windows and linux env. vs os.rename
+        newname_file_path = shutil.move(newest,os.path.join(user_folder,new_title)) # acts the same in windows and linux env. vs os.rename
+        head , username = os.path.split(user_folder)
+        ###### semi redis ? ######
+        def my_redis():
+            from dotenv import load_dotenv
+            import json
+            load_dotenv()
+            THE_VAULT = os.getenv('THE_VAULT')
+            rng = int(time.time())
+            job_file = f'{username}_{rng}.json'
+            job_json_structure = {
+                'source' : f'{newname_file_path}.finish',
+                'destination' : THE_VAULT,
+                'title' : metadata['title'],
+                'author' : metadata['author'],
+                'username' : username
+
+            }
+            with open(os.path.join(THE_VAULT,'overtime',job_file), 'w') as file:
+                json.dump(job_json_structure,file)
+            return
         ############################
         def db_registration():
             import sqlite3
@@ -43,7 +63,9 @@ def _rename_book_file(user_folder):
             con.commit()
             con.close()
         ##################### turn on later when live
-        db_registration()
+        #db_registration()
+        my_redis()
+        
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 
