@@ -2,7 +2,7 @@ import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
-from ..utils import discord_file_creation , book_search_output
+from ..utils import discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
 
@@ -109,19 +109,20 @@ class Book(commands.Cog):
         await interaction.response.send_message(f'Looking for {title} by {author}')
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook']
+        bot_command_status = False
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
                 job_status = await response.json()
                 if response.status == 200 and job_status is not None:
-                    to_be_attached = discord_file_creation(user_name)
+                    bot_command_status = True
+                    to_be_attached, finished_file = discord_file_creation(user_name)
                     original_message = await interaction.original_response()
                     await original_message.edit(content=
                         f'{original_message.content}\n<Finished> {interaction.user.mention}',
                         attachments=[to_be_attached]
                         )
+                    tag_file_finish(finished_file)
                     #await interaction.followup.send("file",file=to_be_attached)
-                else:
-                    await interaction.followup.send("Failed to fetch file.")
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:
@@ -132,6 +133,9 @@ class Book(commands.Cog):
             print(f"A timeout error occurred: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+        finally:
+            if bot_command_status is False:
+                await interaction.followup.send("```Error: /findbook```")
 
     @app_commands.command(name='findbook_on_roids', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')

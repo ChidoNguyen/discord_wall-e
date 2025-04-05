@@ -103,7 +103,6 @@ def book_bot():
         
         if bot_driver and outcome:
             print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
-            return True
         return None
     
     except Exception as e:
