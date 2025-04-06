@@ -5,6 +5,8 @@ from src.automation.auto_bot_setup import create_auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
 from src.automation.auto_bot_util import _check_max_limit , _output_template
+from src.automation.book_bot_output import book_bot_status #singleton output handler class
+
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
@@ -48,8 +50,9 @@ def book_bot():
     """
     #keyword arg parsing rather than positional args
     bot_username, bot_search_terms,bot_option = _arg_parse()
-
-
+    book_bot_status.bot_updates('status','In Progress')
+    book_bot_status.bot_updates('steps', 'arg parse')
+    
     if None in (bot_search_terms,bot_username,bot_option):
         #print(f'Invalid number of arguments')
         tmp = {"status" : "failure" , "message" : "Invalid arguments"}
@@ -99,9 +102,6 @@ def book_bot():
             outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
         
         if bot_driver and outcome:
-            ###### 
-            JOB_STATUS_OUTPUT['status'] = 'success'
-            ######
             print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
         return None
     
