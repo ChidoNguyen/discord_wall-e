@@ -34,7 +34,7 @@ def _rename_book_file(user_folder):
             from dotenv import load_dotenv
             import json
             load_dotenv()
-            JOB_DIR = os.getenv('JOB_DIR')
+            THE_JOBS = os.getenv('THE_JOBS')
             THE_VAULT = os.getenv('THE_VAULT')
             rng = int(time.time())
             job_file = f'{username}_{rng}.json'
@@ -46,8 +46,9 @@ def _rename_book_file(user_folder):
                 'username' : username
 
             }
-            with open(os.path.join(JOB_DIR,job_file), 'w') as file:
+            with open(os.path.join(THE_JOBS,job_file), 'w') as file:
                 json.dump(job_json_structure,file)
+            print(json.dumps(job_json_structure))
             return
         ############################
         def db_registration():

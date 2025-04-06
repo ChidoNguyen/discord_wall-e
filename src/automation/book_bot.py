@@ -8,15 +8,12 @@ from src.automation.auto_bot_util import _check_max_limit , _output_template
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
-'''
-diff system argument approach from ORDER dependent arguments to
-anyorder via keyword arguments
-
---search
---user
---option
-
-'''
+JOB_STATUS_OUTPUT = {
+    'status' : 'initialization',
+    'metadata' : None,
+    'message' : None,
+    'job stage' : None
+}
 def _arg_parse():
     """
     Function : Parses our command line argument
@@ -102,6 +99,9 @@ def book_bot():
             outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
         
         if bot_driver and outcome:
+            ###### 
+            JOB_STATUS_OUTPUT['status'] = 'success'
+            ######
             print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
         return None
     
