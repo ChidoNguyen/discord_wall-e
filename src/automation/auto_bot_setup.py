@@ -31,7 +31,7 @@ def _create_auto_bot_driver(save_dir):
     """
     #chrome driver options
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless") #no window open during script run
+    options.add_argument("--headless=new") #no window open during script run
     prefs = {
         "download.default_directory" : save_dir ,
         "savefile.default_directory" : save_dir , 
@@ -39,8 +39,9 @@ def _create_auto_bot_driver(save_dir):
         "directory_upgrade" : True
     }
     options.add_experimental_option('prefs',prefs)
+    ### debug logging ###
+    #options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
     ###
-
     bot_driver = None
     if platform.system() == 'Linux': #platform dependent initilization
         service = Service('/usr/bin/chromedriver')

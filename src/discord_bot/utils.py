@@ -42,9 +42,11 @@ def book_search_output(username:str):
     search_result = "results.json"
     with open(os.path.join(user_folder,search_result) , 'r') as json_file:
         return json.load(json_file)
+    
 def tag_file_finish(filepath : str):
     shutil.move(filepath,filepath + '.finish')
     return
+
 if __name__ == '__main__':
     print("not meant to be ran alone")
     

@@ -7,7 +7,7 @@ import time
 import shutil
 
 from src.automation.auto_bot_util import _get_download_metadata
-
+from src.automation.book_bot_output import book_bot_status
 
 def _rename_book_file(user_folder):
     """
@@ -29,45 +29,15 @@ def _rename_book_file(user_folder):
         #os.rename(newest, os.path.join(user_folder,new_title))
         newname_file_path = shutil.move(newest,os.path.join(user_folder,new_title)) # acts the same in windows and linux env. vs os.rename
         head , username = os.path.split(user_folder)
-        ###### semi redis ? ######
-        def my_redis():
-            from dotenv import load_dotenv
-            import json
-            load_dotenv()
-            THE_JOBS = os.getenv('THE_JOBS')
-            THE_VAULT = os.getenv('THE_VAULT')
-            rng = int(time.time())
-            job_file = f'{username}_{rng}.json'
-            job_json_structure = {
-                'source' : f'{newname_file_path}.finish',
-                'destination' : THE_VAULT,
-                'title' : metadata['title'],
-                'author' : metadata['author'],
-                'username' : username
 
-            }
-            with open(os.path.join(THE_JOBS,job_file), 'w') as file:
-                json.dump(job_json_structure,file)
-            print(json.dumps(job_json_structure))
-            return
-        ############################
-        def db_registration():
-            import sqlite3
-            from dotenv import load_dotenv
-            load_dotenv()
-            db_file = os.getenv('DB_PATH')
-            con = sqlite3.connect(db_file)
-            cursor = con.cursor()
-            table_name = "digital_brain"
-            insert_sql = f'INSERT OR IGNORE INTO {table_name} (title , author , user ) VALUES ( ? , ? , ? )'
-            head , tails = os.path.split(user_folder)
-            cursor.execute(insert_sql,(metadata['title'],metadata['author'],tails))
-            con.commit()
-            con.close()
-        ##################### turn on later when live
-        #db_registration()
-        my_redis()
-        
+        #### Update our global output #####
+        file_info = {
+            'source' : f'{newname_file_path}.finish',
+            'title' : metadata['title'],
+            'author' : metadata['author'],
+            'username' : username
+        }
+        book_bot_status.updates(('metadata',file_info))
     except Exception as e:
         print(f'Error failed to rename file. {e}')
         return False 

@@ -50,29 +50,28 @@ def book_bot():
     """
     #keyword arg parsing rather than positional args
     bot_username, bot_search_terms,bot_option = _arg_parse()
-    book_bot_status.bot_updates('status','In Progress')
-    book_bot_status.bot_updates('steps', 'arg parse')
+    book_bot_status.updates(('steps', 'arg parse'))
     
-    if None in (bot_search_terms,bot_username,bot_option):
-        #print(f'Invalid number of arguments')
-        tmp = {"status" : "failure" , "message" : "Invalid arguments"}
-        print(json.dumps(tmp))
+    if None in (bot_search_terms,bot_username,bot_option) or bot_option not in BOT_SETTINGS:
+        book_bot_status.updates(('message','invalid argument(s)'))
+        print(book_bot_status.get_json_output())
         return None
 
     #bot options check
-    if bot_option not in BOT_SETTINGS:
+    """ if bot_option not in BOT_SETTINGS:
         print(json.dumps({"status" : "failure" , "message" : "Invalid bot option."}))
-        return None
+        return None """
 
     #initialize selenium webdriver
     bot_driver,user_folder = create_auto_bot(bot_username)
 
     #download limit check
     if _check_max_limit(bot_driver):
-        print(json.dumps({"status" : "failure" , "message" : "Download Limit Reached (wait or change accounts)."}))
+        book_bot_status.updates(('message','Download limit reached. Wait or change accounts'))
+        print(book_bot_status.get_json_output())
         bot_driver.quit()
         return None
-
+    book_bot_status.updates(('steps','WebDriver active'))
     ### clean up assurance ##
     try:
         outcome = None
@@ -80,12 +79,14 @@ def book_bot():
             bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
             #can check for tuple or None
             if bot_search_results is None:
-                print(json.dumps({"status" : "failure" , "message" : "Error in selenium search script"}))
+                book_bot_status.updates(('steps','search'),('message','Error in selenium search script'))
+                print(book_bot_status.get_json_output())
                 return None
 
             bot_driver , links = bot_search_results
             if not links:
-                print(json.dumps({"status" : "failure" , "message" : "No links found for search query."}))
+                book_bot_status.updates(('steps','links acquisition'),('message','No links found.'))
+                print(book_bot_status.get_json_output())
                 return None
             if bot_option == 'getbook':
                 outcome = start_download(bot_driver,user_folder,links[0]) #auto download top link
@@ -102,13 +103,21 @@ def book_bot():
             outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
         
         if bot_driver and outcome:
-            print(json.dumps({'status' : 'success' , 'message' : 'book found'}))
+            book_bot_status.set_status('success')
+            book_bot_status.updates(('message', 'Successful download'))
+            print(book_bot_status.get_json_output())
         return None
     
     except Exception as e:
-        print(json.dumps({'status':'failure' , 'message' : e}))
+        book_bot_status.updates(('message',e))
+        print(book_bot_status.get_json_output())
         return None
     finally:
+        #### for debugging ####
+        #logs = bot_driver.get_log("browser")
+        #for entry in logs:
+        #    print(f"{entry['level']} - {entry['message']}")
+        ####
         if 'bot_driver' in locals() and bot_driver:
             bot_driver.quit()
 

@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
@@ -102,5 +103,7 @@ def _get_download_metadata(target_file : str):
     literature = epub.read_epub(target_file)
     lit_author = literature.get_metadata('DC','creator')[0][0]
     lit_title = literature.get_metadata('DC','title')[0][0]
-    
+    #sanitize
+    lit_author = re.sub(r'[<>:"/\\|?*]', '', lit_author)
+    lit_title = re.sub(r'[<>:"/\\|?*]', '', lit_title)
     return { 'author' : lit_author , 'title' : lit_title }
