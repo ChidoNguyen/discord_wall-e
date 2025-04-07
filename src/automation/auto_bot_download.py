@@ -39,7 +39,8 @@ def _rename_book_file(user_folder):
         }
         book_bot_status.updates(('metadata',file_info))
     except Exception as e:
-        print(f'Error failed to rename file. {e}')
+        book_bot_status.updates(('Error','Error - failed file rename'))
+        #print(f'Error failed to rename file. {e}')
         return False 
     return True
 
@@ -86,10 +87,12 @@ def _download_attempt(bot_webdriver, link_url, user_folder):
         dl_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.btn.btn-default.addDownloadedBook")))
         dl_button.click()
     except NoSuchElementException as e:
-        print(f'Error clicking the download link and button. {e}')
+        book_bot_status.updates(('Error',f'Error - Missing download elements {e}'))
+        #print(f'Error clicking the download link and button. {e}')
         return None
     except TimeoutException as e:
-        print(f'Timeout error trying to locate download button. {e}')
+        book_bot_status.updates(('Error',f'Error - Timeout error on download button {e}'))
+        #print(f'Timeout error trying to locate download button. {e}')
         return None
 
     #download complete check

@@ -1,7 +1,7 @@
 import os
 import time
 import json
-
+from src.automation.book_bot_output import book_bot_status
 COOKIES = {
     'path' : "cookies",
     'fname' : 'bot_cookies.json'
@@ -23,7 +23,8 @@ def _valid_cookies():
         with open(os.path.join(COOKIES_PATH,COOKIES['fname']), 'r') as file:
             cookies_json = json.load(file)
     except Exception as e:
-        print(f'Error : no current cookies on file, will attempt to create.')
+        book_bot_status.updates(('Error',f'Error - Valid Cookies {e}'))
+        #print(f'Error : no current cookies on file, will attempt to create.')
         return False
     
     for components in cookies_json[1:]:
@@ -37,7 +38,8 @@ def _load_cookies(bot_webdriver):
         with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'r') as file:
             cookies_json = json.load(file)
     except Exception as e:
-        print(f'Error: {e}')
+        book_bot_status.updates(('Error',f'Error - Open Existing Cookies {e}'))
+        #print(f'Error: {e}')
         return False
     
     try:
@@ -46,14 +48,16 @@ def _load_cookies(bot_webdriver):
                 cookie['expiry'] = int(cookie['expiry'])
             bot_webdriver.add_cookie(cookie)
     except Exception as e:
-        print(f'Error: {e}')
+        book_bot_status.updates(('Error',f'Error - Expiration Check Cookies {e}'))
+        #print(f'Error: {e}')
         return False
     
     try:
         bot_webdriver.refresh()
         return True
     except Exception as e:
-        print(f'Cookies failed to load. Error : {e}')
+        book_bot_status.updates(('Error',f'Error - Loading Cookies {e}'))
+        #print(f'Cookies failed to load. Error : {e}')
         return False
 
 def _save_cookies(bot_webdriver):
@@ -62,7 +66,8 @@ def _save_cookies(bot_webdriver):
         with open(os.path.join(COOKIES_PATH, COOKIES['fname']), 'w') as file:
             json.dump(cookies,file)
     except Exception as e:
-        print(f'Cookies failed to save. Error : {e}')
+        book_bot_status.updates(('Error',f'Error - Saving Cookies {e}'))
+        #print(f'Cookies failed to save. Error : {e}')
         return False
 if __name__ == '__main__':
     print(COOKIES_PATH)

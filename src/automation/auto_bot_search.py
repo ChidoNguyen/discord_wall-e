@@ -1,7 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from .book_bot_config import url as site_url
-
+from src.automation.book_bot_output import book_bot_status
 
 MAX_RESULTS = 10
 XPATH = {
@@ -21,14 +21,16 @@ def _search_query_input(bot_webdriver, search_query):
     try:
         search_field = bot_webdriver.find_element(By.XPATH, XPATH['s_field'])
     except NoSuchElementException as e:
-        print(f'Error: {e}')
+        book_bot_status.updates(('Error',f'Error - Search Field Element {e}'))
+        #print(f'Error: {e}')
         return None
     
     try:
         search_field.send_keys(search_query)
         search_button = bot_webdriver.find_element(By.XPATH, XPATH['s_button']).click()
     except NoSuchElementException as e:
-        print(f'Error: {e}')
+        book_bot_status.updates(('Error',f'Error - Search Field Input {e}'))
+        #print(f'Error: {e}')
         return None
     
     return bot_webdriver
@@ -62,7 +64,8 @@ def _get_search_result(bot_webdriver):
                 full_link_path = site_url + book_details.get_attribute('href')[1:] # removing starting / from href
                 valid_links.append(full_link_path)
     except Exception as e:
-        print(f'Error: {e} \nBook search link extraction failed.')
+        book_bot_status.updates(('Error',f'Error - Link Extraction {e}'))
+        #print(f'Error: {e} \nBook search link extraction failed.')
         return None
     
     return bot_webdriver , valid_links

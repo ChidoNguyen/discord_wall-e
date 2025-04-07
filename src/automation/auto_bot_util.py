@@ -3,7 +3,7 @@ import json
 import re
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-
+from src.automation.book_bot_output import book_bot_status
 from ebooklib import epub
 
 def _navigate_download_history(bot_webdriver):
@@ -22,11 +22,13 @@ def _navigate_download_history(bot_webdriver):
         click_link = bot_webdriver.find_element(By.XPATH , LIMIT_XPATH["download_history"])
         href_link = click_link.get_attribute('href')
     except NoSuchElementException as e:
-        print(e)
+        book_bot_status.updates(('Error',f'Error - Navigate DL History Link {e}'))
+        #print(e)
     try:
         bot_webdriver.get(href_link)
-    except:
-        print("Download history failed to follow URL.")
+    except Exception as e:
+        book_bot_status.updates(('Error',f'Error - Re-direct to DL History {e}'))
+        #print("Download history failed to follow URL.")
     return bot_webdriver
 
 def _check_download_limit(bot_webdriver):
@@ -40,7 +42,8 @@ def _check_download_limit(bot_webdriver):
     try:
         out_of_ten = bot_webdriver.find_element(By.CSS_SELECTOR , 'div.m-v-auto.d-count')
     except NoSuchElementException as e:
-        print(e)
+        book_bot_status.updates(('Error',f'Error - Missing Download Limit Element {e}'))
+        #print(e)
     str_limit = out_of_ten.text
     if str_limit == "10/10":
         return True
@@ -81,7 +84,8 @@ def _output_template(bot_webdriver,user_folder,links):
             title = bot_webdriver.find_element(By.XPATH, '//h1[@itemprop= "name"]').text
             author = bot_webdriver.find_element(By.XPATH, '//a[@class= "color1"][@title="Find all the author\'s book"]').text
         except Exception as e:
-            print(f"prolly failed cause we're too fast {e}")
+            book_bot_status.updates(('Error',f'Error - Output Title/Author Extraction {e}'))
+            #print(f"prolly failed cause we're too fast {e}")
         json_object = {
             'link' : url,
             'author' : author,

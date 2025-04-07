@@ -59,10 +59,10 @@ class ButtonEmbeddedLink(Button):
                 try:
                     async with session.post(url=test_url, json= data) as response:
                         job_status = await response.json()
-                        to_be_attached = discord_file_creation(user_name)
+                        to_be_attached , finished_file = discord_file_creation(user_name)
                         if response.status == 200 and job_status is not None:
                             await self.parent_view.attach_file(to_be_attached)
-
+                            tag_file_finish(finished_file)
                             #await interaction.followup.send(f'<finished>', file=to_be_attached)
                         else:
                             await interaction.followup.send("fail")
@@ -112,16 +112,21 @@ class Book(commands.Cog):
         bot_command_status = False
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
-                job_status = await response.json()
-                if response.status == 200 and job_status is not None:
-                    bot_command_status = True
-                    to_be_attached, finished_file = discord_file_creation(user_name)
-                    original_message = await interaction.original_response()
-                    await original_message.edit(content=
-                        f'{original_message.content}\n<Finished> {interaction.user.mention}',
-                        attachments=[to_be_attached]
-                        )
-                    tag_file_finish(finished_file)
+                try:
+                    job_status = await response.json()
+                    if response.status == 200 and job_status is not None:
+                        bot_command_status = True
+                        to_be_attached, finished_file = discord_file_creation(user_name)
+                        original_message = await interaction.original_response()
+                        await original_message.edit(content=
+                            f'{original_message.content}\n<Finished> {interaction.user.mention}',
+                            attachments=[to_be_attached]
+                            )
+                        tag_file_finish(finished_file)
+                    else:
+                        print(response)
+                except Exception as e:
+                    print(f'findbook -  {e}')
                     #await interaction.followup.send("file",file=to_be_attached)
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")

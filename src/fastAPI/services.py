@@ -36,6 +36,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
+    print(result)
     if result.get('status') == 'success':
         return f'{search_title} {search_author}'
     return None # assuming if not success then failure
@@ -63,8 +64,9 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
         print("find_book_service_on_roid terminated for taking too long")
         return None
     stdout_decode = stdout.decode()
-    stderr_decode = stderr.decode()
+    #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
+    print(result)
     if result.get('status') == 'success':
         return f'{search_title} {search_author}'
     return None # assuming if not success then failure
@@ -94,6 +96,7 @@ async def find_book_options(book_info : dict, user_info : dict):
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
+    print(result)
     if result.get('status') == 'success':
         return result
     return None # assuming if not success then failure    
