@@ -3,14 +3,25 @@ import sys
 import json
 import os
 import shutil
+import sqlite3
+from time import time
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
 load_dotenv()
 THE_VAULT = os.getenv('THE_VAULT')
 DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
+THE_JOBS = os.getenv('THE_JOBS')
+DB_PATH = os.getenv('DB_PATH')
 ### DO NOT RUN WITH RELOAD ####
 system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
-
+'''
+Selenium Script Formatted Output (JSON):
+    status : str
+    metadata : None | JSON(source/title/author/username)
+    message : None | str
+    steps : list
+    misc : list
+'''
 async def find_book_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
@@ -36,9 +47,8 @@ async def find_book_service(book_info : dict, user_info : dict):
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
-    print(result)
     if result.get('status') == 'success':
-        return f'{search_title} {search_author}'
+        return result
     return None # assuming if not success then failure
 
 ########
@@ -96,12 +106,23 @@ async def find_book_options(book_info : dict, user_info : dict):
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
-    print(result)
     if result.get('status') == 'success':
         return result
     return None # assuming if not success then failure    
 
-
+async def _create_database_job(job_details):
+    '''
+    Params : Dictionary of info needed to do the job source path / author / title/ username
+        source : str - full path to where the finished file is residing
+        author / title : str - used to format new file name during job
+        username : str - for catalog purposes
+    Output : json job file will be created in env. defined directory 
+    '''
+    username = job_details['username']
+    job_file_name = f'{username}_book_{int(time())}.json'
+    with open(os.path.join(THE_JOBS,job_file_name),'w') as f:
+        json.dump(job_details,f)
+    return job_file_name
 
 
 """ async def metadata_extraction(book):
@@ -125,3 +146,27 @@ async def to_the_vault(user):
         shutil.move(newest_file,THE_VAULT)
     finally:
         return
+async def _register_vault(job_details):
+    source,title,author,username = job_details.values()
+    #db#
+    db_con = sqlite3.connect(DB_PATH)
+    cursor = db_con.cursor()
+    sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
+    cursor.execute(sql_insert_ignore,(title,author,username))
+    print(cursor.execute("SELECT * FROM digital_brain").fetchall())
+    db_con.commit()
+    db_con.close()
+    ###
+
+    #the vault#
+    shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+
+async def cron_fake(job_details):
+    await _create_database_job(job_details)
+
+    job_listings = [os.path.join(THE_JOBS,files) for files in os.listdir(THE_JOBS) if files.endswith('json')]
+    for items in job_listings:
+        with open(items, 'r') as f:
+            job_info = json.load(f)
+            await _register_vault(job_info)
+    
