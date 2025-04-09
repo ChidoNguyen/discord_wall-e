@@ -77,7 +77,7 @@ async def pick_book(unknown_book : UnknownBook, user_details: UserDetails):
 #temporary placeholder for starting a cron job via api ping instead of continuous monitoring
 @router.post("/db_register")
 async def db_job_file(data : dict):
-    result = await _create_database_job(data)
+    result = await cron_fake(data)
     if result is not None:
         return {"message" : result}
     return None

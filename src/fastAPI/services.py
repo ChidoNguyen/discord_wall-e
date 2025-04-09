@@ -4,7 +4,7 @@ import json
 import os
 import shutil
 import sqlite3
-from time import time
+import time
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
 load_dotenv()
@@ -119,7 +119,7 @@ async def _create_database_job(job_details):
     Output : json job file will be created in env. defined directory 
     '''
     username = job_details['username']
-    job_file_name = f'{username}_book_{int(time())}.json'
+    job_file_name = f'{username}_book_{int(time.time())}.json'
     with open(os.path.join(THE_JOBS,job_file_name),'w') as f:
         json.dump(job_details,f)
     return job_file_name
@@ -159,7 +159,18 @@ async def _register_vault(job_details):
     ###
 
     #the vault#
-    shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+    finish_tag = False
+    while not finish_tag:
+        if os.path.exists(source):
+            t = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+            print(t)
+            finish_tag= True
+        else:
+            print("re-trying in 5s")
+            time.sleep(5)
+    return "file registered and saved"
+
+            
 
 async def cron_fake(job_details):
     await _create_database_job(job_details)

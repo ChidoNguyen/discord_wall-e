@@ -8,6 +8,7 @@ from discord.ui import View, Button
 
 import aiohttp
 import os
+import re
 class BookOptions(View):
     def __init__(self, links: list , interaction : discord.Interaction):
         super().__init__()
@@ -106,6 +107,8 @@ class Book(commands.Cog):
     @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
+        #sanitize cause discord lets "." come in
+        user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name) #just do a remove
         await interaction.response.send_message(f'Looking for {title} by {author}')
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook']
@@ -146,6 +149,7 @@ class Book(commands.Cog):
     @app_commands.describe(title='title',author='author (optional)')
     async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
+        user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook_roids']
 
@@ -186,15 +190,16 @@ class Book(commands.Cog):
     @app_commands.describe(what='what',who='who')
     async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
+        user_name = re.sub(r'[<>:"/\\|?*.]', '', user.name)
         await user.send("Just hold your horses...")
         await interaction.response.send_message(f'{what} {who}',ephemeral=True)
-        data = self.json_payload(user= user.name, title= what, author= who)
+        data = self.json_payload(user= user_name, title= what, author= who)
         url = self.api + self.api_routes['findbook']
         try:
             async with self.cog_api_session.post(url,json=data) as response:
                 resp_status = await response.json()
                 if response.status == 200 and resp_status is not None:
-                    to_be_attached = discord_file_creation(user.name)
+                    to_be_attached = discord_file_creation(user_name)
                     await user.send("You wanted..." , file=to_be_attached)
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
