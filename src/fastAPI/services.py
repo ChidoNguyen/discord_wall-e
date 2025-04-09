@@ -159,25 +159,28 @@ async def _register_vault(job_details):
     ###
 
     #the vault#
-    finish_tag = False
-    while not finish_tag:
-        if os.path.exists(source):
-            t = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
-            print(t)
-            finish_tag= True
-        else:
-            print("re-trying in 5s")
-            time.sleep(5)
-    return "file registered and saved"
+    #try it 3x 5s wait time 15s total
+    while os.path.exists(source) is False:
+        for i in range(1,10):
+            print(f'{i}')
+            time.sleep(1)
+    try:
+        moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+        return True , moved_path
+    except Exception as e:
+        return False,f'Error shutil.move() - {e}'
+    #return False, None
 
             
 
 async def cron_fake(job_details):
     await _create_database_job(job_details)
-
     job_listings = [os.path.join(THE_JOBS,files) for files in os.listdir(THE_JOBS) if files.endswith('json')]
     for items in job_listings:
         with open(items, 'r') as f:
             job_info = json.load(f)
-            await _register_vault(job_info)
+            status, data = await _register_vault(job_info)
+        if status and os.path.exists(data):
+            os.remove(items)
+    return
     

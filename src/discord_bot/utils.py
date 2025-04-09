@@ -20,11 +20,12 @@ def discord_file_creation(username : str):
     target_file_ctime = 0
     discord_file_name = None
     for item in os.listdir(user_folder):
-        item_path = os.path.join(user_folder,item)
-        item_ctime = os.path.getctime(item_path)
-        if item_ctime > target_file_ctime:
-            target_file , target_file_ctime = item_path, item_ctime
-            discord_file_name = item
+        if item.endswith('epub'):
+            item_path = os.path.join(user_folder,item)
+            item_ctime = os.path.getctime(item_path)
+            if item_ctime > target_file_ctime:
+                target_file , target_file_ctime = item_path, item_ctime
+                discord_file_name = item
     #####
     import io
     with open(target_file , 'rb') as file:
@@ -34,6 +35,7 @@ def discord_file_creation(username : str):
     #with open(target_file , 'rb') as file:
         #attached_file = discord.File(fp = file)
     #append .finish after finishing
+    tag_file_finish(target_file)
     return attached_file , target_file
 
 def book_search_output(username:str):

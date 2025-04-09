@@ -125,7 +125,7 @@ class Book(commands.Cog):
                             f'{original_message.content}\n<Finished> {interaction.user.mention}',
                             attachments=[to_be_attached]
                             )
-                        tag_file_finish(finished_file)
+                        #tag_file_finish(finished_file)
                     else:
                         print(response)
                 except Exception as e:

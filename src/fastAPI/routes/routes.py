@@ -51,7 +51,7 @@ async def find_book(unknown_book : UnknownBook, user_details : UserDetails, back
     #can narrow down check on novel for extra check but services already check that status is success
     ###
     if novel is not None:
-        background_tasks.add_task(cron_fake,job_json_data)
+        #background_tasks.add_task(cron_fake,job_json_data)
         return {"message" : novel}
     return None
 

@@ -32,11 +32,32 @@ def _create_auto_bot_driver(save_dir):
     #chrome driver options
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new") #no window open during script run
+    ##### NEW RESOURCE OPTIONS (?) ######
+
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1200,800")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-background-networking")
+    options.add_argument("--disable-sync")
+    options.add_argument("--disable-default-apps")
+    options.add_argument("--disable-translate")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--metrics-recording-only")
+    options.add_argument("--disable-hang-monitor")
+    options.add_argument("--safebrowsing-disable-auto-update")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+
+
+
+    #######
     prefs = {
         "download.default_directory" : save_dir ,
         "savefile.default_directory" : save_dir , 
         "download.prompt_for_download" : False ,
-        "directory_upgrade" : True
+        "directory_upgrade" : True,
+        "profile.managed_default_content_settings.images": 2 #new
     }
     options.add_experimental_option('prefs',prefs)
     ### debug logging ###
