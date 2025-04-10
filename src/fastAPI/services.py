@@ -76,7 +76,6 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
     result = json.loads(stdout_decode)
-    print(result)
     if result.get('status') == 'success':
         return f'{search_title} {search_author}'
     return None # assuming if not success then failure
@@ -152,8 +151,8 @@ async def _register_vault(job_details):
     db_con = sqlite3.connect(DB_PATH)
     cursor = db_con.cursor()
     sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
-    #cursor.execute(sql_insert_ignore,(title,author,username))
-    #print(cursor.execute("SELECT * FROM digital_brain").fetchall())
+    cursor.execute(sql_insert_ignore,(title,author,username))
+    print(cursor.execute("SELECT * FROM digital_brain").fetchall())
     db_con.commit()
     db_con.close()
     ###

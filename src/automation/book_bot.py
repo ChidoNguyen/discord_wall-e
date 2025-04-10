@@ -71,11 +71,12 @@ def book_bot():
         print(book_bot_status.get_json_output())
         bot_driver.quit()
         return None
-    book_bot_status.updates(('steps','WebDriver active'))
+    book_bot_status.update_step('Download limit check.')
     ### clean up assurance ##
     try:
         outcome = None
         if bot_option != 'pick':
+            book_bot_status.update_step('Getbook or Getbook-adv - Entry Point')
             bot_search_results = bot_search(bot_driver, bot_search_terms) # tuple (driver,list of links)
             #can check for tuple or None
             if bot_search_results is None:
@@ -99,6 +100,7 @@ def book_bot():
                 except Exception as e:
                     print(f'{e}')
         else:
+            book_bot_status.update_step('Pick Option - Attempting to download.')
             #its our pick choose/load proper url (?)
             outcome = start_download(bot_driver,user_folder,bot_search_terms) #bsstring should be direct url
         

@@ -32,6 +32,9 @@ class BookScriptStatus:
     def set_status(self,status):
         self.output['status'] = status
 
+    def update_step(self,step:str):
+        self.output['steps'].append(step)
+        
     def get_output(self):
         return self.output
     

@@ -20,21 +20,6 @@ async def home():
     print("Homepage")
     return {"message" : "homepage"}
 
-
-##### Move to util function later??######
-### notes to self : create "bookboterror" in sel script
-
-def template_api_response(status: str, message: str, data : Dict[str,Any] | None, error_details : Dict[str,str] | None):
-    response = {
-        "status" : status,
-        "message" : message,
-        "data" : data if data else {}
-    }
-    
-    if error_details:
-        response['error_details'] = error_details
-    return response
-
 @router.post("/find_book")
 async def find_book(unknown_book : UnknownBook, user_details : UserDetails, background_tasks : BackgroundTasks):
     #print("looking")
@@ -52,32 +37,25 @@ async def find_book(unknown_book : UnknownBook, user_details : UserDetails, back
     ###
     if novel is not None:
         background_tasks.add_task(cron_fake,job_json_data)
-        return {"message" : novel}
+        return {"message" : 'acquired'}
     return None
 
 @router.post("/find_book_roids")
-async def find_book_roids(unknown_book : UnknownBook, user_details : UserDetails):
+async def find_book_roids(unknown_book : UnknownBook, user_details : UserDetails,background_tasks : BackgroundTasks):
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_book_service_roids(book_info,user_info)
-    #print(novel)
     if novel is not None:
-        return {"message" : novel}
+        return {"message" : 'found some stuff'}
     return None
 
 @router.post("/pick")
-async def pick_book(unknown_book : UnknownBook, user_details: UserDetails):
+async def pick_book(unknown_book : UnknownBook, user_details: UserDetails,background_tasks: BackgroundTasks):
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_book_options(book_info,user_info)
+    _ , job_json_data , _ , _ , _ = novel.values()
     if novel is not None:
-        return {"message" : novel}
-    return None
-
-#temporary placeholder for starting a cron job via api ping instead of continuous monitoring
-@router.post("/db_register")
-async def db_job_file(data : dict):
-    result = await cron_fake(data)
-    if result is not None:
-        return {"message" : result}
+        background_tasks.add_task(cron_fake,job_json_data)
+        return {"message" : 'acquired'}
     return None

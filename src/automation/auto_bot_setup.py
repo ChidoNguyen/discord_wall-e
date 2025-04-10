@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from src.automation.bot_site_cookies import _load_cookies, _save_cookies, _valid_cookies
 from .book_bot_config import download_dir , url , userID , userPass
+from src.automation.book_bot_output import book_bot_status
 
 def _create_user_save_dir(requester):
     """
@@ -15,10 +16,15 @@ def _create_user_save_dir(requester):
 
     Returns : str - the full user path created
     """
-    user_folder = os.path.join(download_dir, requester)
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
-    return user_folder
+    book_bot_status.update_step("create user save dir")
+    try:
+        user_folder = os.path.join(download_dir, requester)
+        if not os.path.exists(user_folder):
+            os.makedirs(user_folder)
+        return user_folder
+    except Exception as e:
+        book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
+        return None
 
 def _create_auto_bot_driver(save_dir):
     """
@@ -29,6 +35,7 @@ def _create_auto_bot_driver(save_dir):
 
     Returns : webdriver 
     """
+    book_bot_status.update_step('create webdriver')
     #chrome driver options
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new") #no window open during script run
@@ -64,12 +71,14 @@ def _create_auto_bot_driver(save_dir):
     #options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
     ###
     bot_driver = None
-    if platform.system() == 'Linux': #platform dependent initilization
-        service = Service('/usr/bin/chromedriver')
-        bot_driver = webdriver.Chrome(service=service , options=options)
-    else:
-        bot_driver = webdriver.Chrome(options=options)
-
+    try:
+        if platform.system() == 'Linux': #platform dependent initilization
+            service = Service('/usr/bin/chromedriver')
+            bot_driver = webdriver.Chrome(service=service , options=options)
+        else:
+            bot_driver = webdriver.Chrome(options=options)
+    except Exception as e:
+        book_bot_status.updates(('Error',f'create_auto_bot_driver - {e}'))
     return bot_driver
 
 def _get_homepage(bot_driver):
@@ -81,7 +90,6 @@ def _get_homepage(bot_driver):
     Returns : webdriver  or None
     """
     site_url = url
-
     bot_driver.get(site_url)
     bot_driver.implicitly_wait(10)
     
@@ -109,7 +117,7 @@ def _login_page(bot_driver):
         bot_driver.get(login_link) #navigate to login page
         return bot_driver
     except:
-        print(f'Failed to identify link for login page.')
+        book_bot_status.updates(('Error' , f'Login page error - {e}'))
         return None
 
     #login form
@@ -132,8 +140,8 @@ def _login_creds_input(bot_driver):
     try:
         bot_driver.find_element(By.XPATH, "//a[@href='/logout']")
         return bot_driver
-    except:
-        print("login attempt failed")
+    except Exception as e:
+        book_bot_status.updates(('Error',f'Login attempt failed - {e}'))
         return None
 
 
@@ -156,9 +164,11 @@ def create_auto_bot(requester):
 
     #cookies check to see if login is needed
     if _valid_cookies():
+        book_bot_status.update_step('Cookies login')
         _load_cookies(homepage_driver)
         return homepage_driver, save_dir
     else:
+        book_bot_status.update_step('New login + refresh cookies')
         if homepage_driver:
             login_element_driver = _login_page(homepage_driver)
         if login_element_driver:
