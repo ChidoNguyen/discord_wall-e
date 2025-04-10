@@ -152,24 +152,19 @@ async def _register_vault(job_details):
     db_con = sqlite3.connect(DB_PATH)
     cursor = db_con.cursor()
     sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
-    cursor.execute(sql_insert_ignore,(title,author,username))
-    print(cursor.execute("SELECT * FROM digital_brain").fetchall())
+    #cursor.execute(sql_insert_ignore,(title,author,username))
+    #print(cursor.execute("SELECT * FROM digital_brain").fetchall())
     db_con.commit()
     db_con.close()
     ###
 
-    #the vault#
-    #try it 3x 5s wait time 15s total
-    while os.path.exists(source) is False:
-        for i in range(1,10):
-            print(f'{i}')
-            time.sleep(1)
-    try:
-        moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
-        return True , moved_path
-    except Exception as e:
-        return False,f'Error shutil.move() - {e}'
-    #return False, None
+    if os.path.exists(source):
+        try:
+            moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+            return True , moved_path
+        except Exception as e:
+            return False,f'Error shutil.move() - {e}'
+    return False, None
 
             
 
@@ -182,5 +177,9 @@ async def cron_fake(job_details):
             status, data = await _register_vault(job_info)
         if status and os.path.exists(data):
             os.remove(items)
+        #if data is not None:
+        #    print(data)
+        if status is False and data is not None:
+            print(data)
     return
     

@@ -35,7 +35,6 @@ def discord_file_creation(username : str):
     #with open(target_file , 'rb') as file:
         #attached_file = discord.File(fp = file)
     #append .finish after finishing
-    tag_file_finish(target_file)
     return attached_file , target_file
 
 def book_search_output(username:str):
