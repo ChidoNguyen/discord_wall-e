@@ -1,6 +1,7 @@
 
 import argparse
 import json
+import asyncio
 from src.automation.auto_bot_setup import create_auto_bot
 from src.automation.auto_bot_search import bot_search
 from src.automation.auto_bot_download import start_download
@@ -10,12 +11,7 @@ from src.automation.book_bot_output import book_bot_status #singleton output han
 #will probably use command line arguments to trigger specific user requested processes
 #example "[python] [script_name.py] [search term/phrase] [requester] [settings]""
 BOT_SETTINGS = ['getbook', 'getbook-adv', 'pick']
-JOB_STATUS_OUTPUT = {
-    'status' : 'initialization',
-    'metadata' : None,
-    'message' : None,
-    'job stage' : None
-}
+
 def _arg_parse():
     """
     Function : Parses our command line argument
@@ -28,16 +24,12 @@ def _arg_parse():
     Returns : parsed args or None(s)
     """
     parser = argparse.ArgumentParser(description="book_bot_kwargs")
-    #argument count 
-    count = 3
-
+    
     parser.add_argument('--search' , type=str, required=True, help= 'Search string used to designate what to look for.')
     parser.add_argument('--user' , type = str , required= True, help = "User's name to help with file organization and task tracking.")
     parser.add_argument('--option', type = str, required= True, help='Designates the bot for usage type among: getbook , getbook-adv, pick')
-    try:
-        args = parser.parse_args()
-    except:
-        return (None,) * count
+
+    args = parser.parse_args()
     return args.user, args.search, args.option
 
 def book_bot():
@@ -98,7 +90,7 @@ def book_bot():
                     _output_template(bot_driver,user_folder,links)
                     outcome = True
                 except Exception as e:
-                    print(f'{e}')
+                    book_bot_status.updates(("Error",f'JSON link output results error : {e}'))
         else:
             book_bot_status.update_step('Pick Option - Attempting to download.')
             #its our pick choose/load proper url (?)
@@ -123,6 +115,82 @@ def book_bot():
         if 'bot_driver' in locals() and bot_driver:
             bot_driver.quit()
 
+def _direct_script_validation(user:str, search:str, option:str):
+    if option not in BOT_SETTINGS:
+        book_bot_status.updates(('Error','Invalid option choice.'))
+    elif not user.strip():
+        book_bot_status.updates(('Error', 'Empty user value.'))
+    elif not search.strip():
+        book_bot_status.updates(('Error','Empty search value'))
+    else:
+        return True
+    return False
 # CLI wrapper + direct callable
+async def direct_bot(user : str , search: str , option: str):
+    """
+    Function : Direct Call to our bot rather than CLI to start automation bot logic
+
+    Arguments: search - string , user - string , option - string
+        search - what we want
+        user - who wants it
+        option - how user wants it
+    Returns: None , json formatted bot output reporting tho
+    """
+    if not _direct_script_validation(user=user,search=search,option=option):
+        print(book_bot_status.get_json_output())
+        return None
+    
+    bot_driver, user_folder = create_auto_bot(user)
+
+    if _check_max_limit(bot_driver):
+        book_bot_status.updates(('message','Download limit reached. Wait or change accounts'))
+        print(book_bot_status.get_json_output())
+        bot_driver.quit()
+        return None
+    book_bot_status.update_step('Download limit check.')
+    try:
+        outcome = None
+        if option == 'pick':
+            book_bot_status.update_step('Pick Option - Attempting to download.')
+            outcome = start_download(bot_driver,user_folder,search)
+        else:
+            book_bot_status.update_step("getbook or getbook-adv : Entry point.")
+            search_results = bot_search(bot_driver,search)
+            if search_results is None:
+                book_bot_status.updates(('steps','search'),('message','Error in selenium search script.'))
+                print(book_bot_status.get_json_output())
+                return None
+            
+            bot_driver , search_links = search_results
+            
+            if not search_links:
+                book_bot_status.updates(('steps','links acquisition'),('message','No links found.'))
+                print(book_bot_status.get_json_output())
+                return None
+            
+            if option == 'getbook':
+                outcome = start_download(bot_driver,user_folder,search_links[0])
+            elif option == 'getbook-adv':
+                try:
+                    outcome = _output_template(bot_driver,user_folder,search_links)
+                except Exception as e:
+                    book_bot_status.updates(("Error",f'JSON link output results error : {e}'))
+        if bot_driver and outcome:
+            book_bot_status.set_status('success')
+            book_bot_status.updates(('message',"successful download"))
+            print(book_bot_status.get_json_output())
+        return None
+    except Exception as e:
+        book_bot_status.updates(('message',e))
+        print(book_bot_status.get_json_output())
+        return None
+    finally:
+        if 'bot_driver' in locals() and bot_driver:
+            bot_driver.quit()
+
+def book_bot_cli():
+    user,search,option = _arg_parse()
+    result = asyncio.run(direct_bot(search=search,user=user,option=option))
+
 if __name__ == '__main__':
-    book_bot()
+    book_bot_cli()

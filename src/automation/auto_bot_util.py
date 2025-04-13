@@ -95,6 +95,7 @@ def _output_template(bot_webdriver,user_folder,links):
     
     with open(os.path.join(user_folder,'results.json'),'w') as json_file:
         json.dump(json_data,json_file,indent=4)
+    return True
 
 def _get_download_metadata(target_file : str):
     """
