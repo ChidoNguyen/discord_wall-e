@@ -75,6 +75,7 @@ class Book(commands.Cog):
             'findbook_roids' : '/find_book_roids',
             'pick' : '/pick'
         }
+
     async def cog_unload(self):
         try:
             await self.cog_api_session.close()
@@ -94,93 +95,86 @@ class Book(commands.Cog):
             'unknown_book' : unknown_book,
             'user_details' : user_details
         }
-
         return data
 
-    @app_commands.command(name="findbook", description="Gets you a book.")
+    @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def findbook(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         #sanitize cause discord lets "." come in
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name) #just do a remove
         await interaction.response.send_message(f'Looking for {title} by {author}')
+        original_message = await interaction.original_response()
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook']
-        bot_command_status = False
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
-                try:
-                    job_status = await response.json()
-                    if response.status == 200 and job_status is not None:
-                        bot_command_status = True
-                        to_be_attached, finished_file = discord_file_creation(user_name)
-                        original_message = await interaction.original_response()
-                        await original_message.edit(content=
-                            f'{original_message.content}\n<Finished> {interaction.user.mention}',
-                            attachments=[to_be_attached]
-                            )
-                        tag_file_finish(finished_file)
-                    else:
-                        print(response)
-                except Exception as e:
-                    print(f'findbook -  {e}')
-                    #await interaction.followup.send("file",file=to_be_attached)
+                if response.status == 200:
+                    try:
+                        job_status = await response.json()
+                        if job_status is not None:
+                            to_be_attached, finished_file = discord_file_creation(user_name)
+                            await original_message.edit(content=
+                                f'{original_message.content}\n<Finished> {interaction.user.mention}',
+                                attachments=[to_be_attached]
+                                )
+                            tag_file_finish(finished_file)
+                            return
+                        else:
+                            print("Empty find response despite 200 response.")
+                    except Exception as e:
+                        print(f'find request -  Failed to parse JSON: {e}')
+                else:
+                    print(f'findbook non-200 response: {response.status}')
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
-        except aiohttp.ClientConnectionError as e:
-            print(f"A connection error occurred: {e}")
-        except aiohttp.ClientResponseError as e:
-            print(f"A response error occurred: {e.status} - {e.message}")
-        except aiohttp.ClientTimeout as e:
-            print(f"A timeout error occurred: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        finally:
-            if bot_command_status is False:
-                await interaction.followup.send("```Error: /findbook```")
+        # Update user message with error
+        await original_message.edit(content="```Error: /find```")
 
-    @app_commands.command(name='findbook_on_roids', description="The idk who wrote it option, or just more flexibility. Search and Pick")
+    @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
+
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['findbook_roids']
 
         await interaction.response.send_message("Working on it.")
+        original_message = await interaction.original_response()
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
-                job_status = await response.json()
-                if response.status == 200 and job_status is not None:
-                    search_results = book_search_output(user_name)
-                    option_view = BookOptions(self,search_results,interaction)
-                    ##### want to edit original interaction ###
-                    options_text = "Review and pick:\n"
-                    for (idx,json_data) in enumerate(search_results,start = 1):
-                        #link/author/title in json data
-                        url = json_data['link']
-                        author = json_data['author']
-                        title = json_data['title']
-                        options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
-                    og_response = await interaction.original_response()
-                    await og_response.edit(content=options_text, view=option_view)
-                    #####
-                    #await interaction.followup.send("test",view = option_view)
+                if response.status == 200:
+                    try:
+                        job_status = await response.json()
+                        if job_status is not None:
+                            search_results = book_search_output(user_name)
+                            option_view = BookOptions(self,search_results,interaction)
+                            ##### want to edit original interaction ###
+                            options_text = "Review and pick:\n"
+                            for (idx,json_data) in enumerate(search_results,start = 1):
+                                #link/author/title in json data
+                                url = json_data['link']
+                                author = json_data['author']
+                                title = json_data['title']
+                                options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
+                            await original_message.edit(content=options_text, view=option_view)
+                            return
+                        else:
+                            print("Empty job_status despite 200 response")
+                    except Exception as e:
+                        print(f'find_hardmode - failed to parse JSON: {e}')
                 else:
-                    await interaction.followup.send("Failed to fetch file.")
+                    print(f'find_hardmode - received non 200 response : {response.status}')
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
-        except aiohttp.ClientConnectionError as e:
-            print(f"A connection error occurred: {e}")
-        except aiohttp.ClientResponseError as e:
-            print(f"A response error occurred: {e.status} - {e.message}")
-        except aiohttp.ClientTimeout as e:
-            print(f"A timeout error occurred: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        return
+        await original_message.edit(content="```Error: /find_hardmode```")
     
-    @app_commands.command(name="whisper_in_your_ear" , description="ill dm you secrets")
+    @app_commands.command(name="whisper_it_to_me" , description="ill dm you secrets")
     @app_commands.describe(what='what',who='who')
     async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
@@ -191,22 +185,25 @@ class Book(commands.Cog):
         url = self.api + self.api_routes['findbook']
         try:
             async with self.cog_api_session.post(url,json=data) as response:
-                resp_status = await response.json()
-                if response.status == 200 and resp_status is not None:
-                    to_be_attached , finished_file = discord_file_creation(user_name)
-                    await user.send("You wanted..." , file=to_be_attached)
-                    tag_file_finish(finished_file)
+                if response.status == 200:
+                    try:
+                        resp_status = await response.json()
+                        if resp_status is not None:
+                            to_be_attached , finished_file = discord_file_creation(user_name)
+                            await user.send("You wanted..." , file=to_be_attached)
+                            tag_file_finish(finished_file)
+                            return
+                        else:
+                            print("Empty job_status despite 200 response.")
+                    except Exception as e:
+                        print(f'whisper_in_my_ear - failed to parse JSON: {e}')
+                else:
+                    print(f'whisper_in_my_ear received non 200 response : {response.status}')
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
-        except aiohttp.ClientConnectionError as e:
-            print(f"A connection error occurred: {e}")
-        except aiohttp.ClientResponseError as e:
-            print(f"A response error occurred: {e.status} - {e.message}")
-        except aiohttp.ClientTimeout as e:
-            print(f"A timeout error occurred: {e}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        return
+        await user.send("Something went wrong sorry dude.")
 
 
 async def setup(bot):
