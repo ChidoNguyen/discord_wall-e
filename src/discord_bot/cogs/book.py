@@ -71,8 +71,8 @@ class Book(commands.Cog):
         self.cog_api_session = aiohttp.ClientSession()
         self.api = os.getenv("API_ENDPOINT")
         self.api_routes = {
-            'findbook' : '/find_book',
-            'findbook_roids' : '/find_book_roids',
+            'find' : '/find',
+            'find_hardmode' : '/find_hardmode',
             'pick' : '/pick'
         }
 
@@ -99,14 +99,14 @@ class Book(commands.Cog):
 
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
-    async def findbook(self,interaction: discord.Interaction, title : str, author : str):
+    async def find(self,interaction: discord.Interaction, title : str, author : str):
         user_name = interaction.user.name
         #sanitize cause discord lets "." come in
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name) #just do a remove
         await interaction.response.send_message(f'Looking for {title} by {author}')
         original_message = await interaction.original_response()
         data = self.json_payload(user=user_name,title=title,author=author)
-        req_url = self.api + self.api_routes['findbook']
+        req_url = self.api + self.api_routes['find']
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
                 if response.status == 200:
@@ -135,12 +135,12 @@ class Book(commands.Cog):
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
-    async def findbook_on_roids(self, interaction : discord.Interaction, title : str , author : str = ""):
+    async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
         user_name = interaction.user.name
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
 
         data = self.json_payload(user=user_name,title=title,author=author)
-        req_url = self.api + self.api_routes['findbook_roids']
+        req_url = self.api + self.api_routes['find_hardmode']
 
         await interaction.response.send_message("Working on it.")
         original_message = await interaction.original_response()
@@ -176,13 +176,13 @@ class Book(commands.Cog):
     
     @app_commands.command(name="whisper_it_to_me" , description="ill dm you secrets")
     @app_commands.describe(what='what',who='who')
-    async def book_dm(self,interaction : discord.Interaction , what : str , who : str):
+    async def direct_msg_request(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user.name)
         await user.send("Just hold your horses...")
         await interaction.response.send_message(f'{what} {who}',ephemeral=True)
         data = self.json_payload(user= user_name, title= what, author= who)
-        url = self.api + self.api_routes['findbook']
+        url = self.api + self.api_routes['find']
         try:
             async with self.cog_api_session.post(url,json=data) as response:
                 if response.status == 200:

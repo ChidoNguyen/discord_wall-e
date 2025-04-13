@@ -22,7 +22,7 @@ Selenium Script Formatted Output (JSON):
     steps : list
     misc : list
 '''
-async def find_book_service(book_info : dict, user_info : dict):
+async def find_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
     discord_user = user_info['username']
@@ -41,7 +41,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     try:
         stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
     except asyncio.TimeoutError:
-        print("find_book_service terminated for taking too long")
+        print("find_service terminated for taking too long")
         return None
     #print(stdout.decode(),stderr.decode())
     stdout_decode = stdout.decode()
@@ -52,7 +52,7 @@ async def find_book_service(book_info : dict, user_info : dict):
     return None # assuming if not success then failure
 
 ########
-async def find_book_service_roids(book_info : dict, user_info : dict):
+async def find_hardmode_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
     discord_user = user_info['username']
@@ -71,7 +71,7 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
     try:
         stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
     except asyncio.TimeoutError:
-        print("find_book_service_on_roid terminated for taking too long")
+        print("find_hardmode_service terminated for taking too long")
         return None
     stdout_decode = stdout.decode()
     #stderr_decode = stderr.decode()
@@ -80,7 +80,7 @@ async def find_book_service_roids(book_info : dict, user_info : dict):
         return f'{search_title} {search_author}'
     return None # assuming if not success then failure
 
-async def find_book_options(book_info : dict, user_info : dict):
+async def pick_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
     discord_user = user_info['username']
@@ -99,7 +99,7 @@ async def find_book_options(book_info : dict, user_info : dict):
     try:
         stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
     except asyncio.TimeoutError:
-        print("find_book_option - terminated for taking too long")
+        print("pick_service - terminated for taking too long")
         return None
     #print(stdout.decode(),stderr.decode())
     stdout_decode = stdout.decode()
