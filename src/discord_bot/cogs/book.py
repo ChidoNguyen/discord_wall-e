@@ -193,8 +193,9 @@ class Book(commands.Cog):
             async with self.cog_api_session.post(url,json=data) as response:
                 resp_status = await response.json()
                 if response.status == 200 and resp_status is not None:
-                    to_be_attached = discord_file_creation(user_name)
+                    to_be_attached , finished_file = discord_file_creation(user_name)
                     await user.send("You wanted..." , file=to_be_attached)
+                    tag_file_finish(finished_file)
         except aiohttp.ClientError as e:
             print(f"A client error occurred: {e}")
         except aiohttp.ClientConnectionError as e:

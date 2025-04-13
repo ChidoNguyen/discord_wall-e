@@ -152,7 +152,7 @@ async def _register_vault(job_details):
     cursor = db_con.cursor()
     sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
     cursor.execute(sql_insert_ignore,(title,author,username))
-    print(cursor.execute("SELECT * FROM digital_brain").fetchall())
+    #print(cursor.execute("SELECT * FROM digital_brain").fetchall())
     db_con.commit()
     db_con.close()
     ###

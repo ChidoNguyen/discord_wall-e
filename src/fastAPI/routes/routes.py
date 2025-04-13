@@ -41,7 +41,7 @@ async def find_book(unknown_book : UnknownBook, user_details : UserDetails, back
     return None
 
 @router.post("/find_book_roids")
-async def find_book_roids(unknown_book : UnknownBook, user_details : UserDetails,background_tasks : BackgroundTasks):
+async def find_book_roids(unknown_book : UnknownBook, user_details : UserDetails):
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_book_service_roids(book_info,user_info)
