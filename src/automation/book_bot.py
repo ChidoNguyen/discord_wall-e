@@ -123,6 +123,6 @@ def book_bot():
         if 'bot_driver' in locals() and bot_driver:
             bot_driver.quit()
 
-
+# CLI wrapper + direct callable
 if __name__ == '__main__':
     book_bot()
