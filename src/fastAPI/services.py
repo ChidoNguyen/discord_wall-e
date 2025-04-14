@@ -6,7 +6,6 @@ import shutil
 import sqlite3
 import time
 from src.automation.book_bot import direct_bot
-from src.automation.book_bot_output import book_bot_status
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
 load_dotenv()
@@ -27,96 +26,66 @@ Selenium Script Formatted Output (JSON):
 async def find_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
-    discord_user = user_info['username']
-
+    user = user_info['username']
+    search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await direct_bot(user=discord_user,search=f'{search_title} {search_author}',option='getbook')
+    script_results = await direct_bot(user=user,search=search,option='getbook')
 
-    script_result_decode = json.loads(script_results)
-    if script_result_decode.get('status') == 'success':
-        return {'message' : script_result_decode.get('message'), 'metadata' : script_result_decode.get('metadata')}
-    else:
-        return None
-    """ args = [
-        system_specific, '-m',
-        'src.automation.book_bot',
-        '--search', f'{search_title} {search_author}',
-        '--user', f'{discord_user}',
-        '--option', 'getbook'
-    ]
-    #our process lets call it librarian#
-    librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
-    
-    try:
-        stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
-    except asyncio.TimeoutError:
-        print("find_service terminated for taking too long")
-        return None
-    #print(stdout.decode(),stderr.decode())
-    stdout_decode = stdout.decode()
-    #stderr_decode = stderr.decode()
-    result = json.loads(stdout_decode)
-    if result.get('status') == 'success':
-        return result
-    return None # assuming if not success then failure """
+    if script_results:
+        try:
+            script_result_parse = json.loads(script_results)
+            if script_result_parse.get('status') == 'success':
+                return {
+                    'message' : script_result_parse.get('message'), 'metadata' : script_result_parse.get('metadata')
+                    }
+        except Exception as e:
+            print(e)
+            pass
+    return None
 
 ########
 async def find_hardmode_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
-    discord_user = user_info['username']
-
+    user = user_info['username']
+    search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    args = [
-        system_specific, '-m',
-        'src.automation.book_bot',
-        '--search', f'{search_title} {search_author}',
-        '--user', f'{discord_user}',
-        '--option', 'getbook-adv'
-    ]
-    #our process lets call it librarian#
-    librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
-    
-    try:
-        stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
-    except asyncio.TimeoutError:
-        print("find_hardmode_service terminated for taking too long")
-        return None
-    stdout_decode = stdout.decode()
-    #stderr_decode = stderr.decode()
-    result = json.loads(stdout_decode)
-    if result.get('status') == 'success':
-        return f'{search_title} {search_author}'
-    return None # assuming if not success then failure
+    script_results = await direct_bot(user=user,search=search,option='getbook-adv')
+
+    if script_results:
+        try:
+            script_results_parse = json.loads(script_results)
+            if script_results_parse.get('status') == 'success':
+                return {
+                    'message': 'found some results',
+                    'metadata' : []
+                    }
+        except Exception as e:
+            print(e)
+            pass
+    return None
 
 async def pick_service(book_info : dict, user_info : dict):
     search_title = book_info['title']
     search_author = book_info['author']
-    discord_user = user_info['username']
+    user = user_info['username']
+    search = f'{search_title} {search_author}'
 
-    #arguments for book_bot#
-    args = [
-        system_specific, '-m',
-        'src.automation.book_bot',
-        '--search', f'{search_title} {search_author}',
-        '--user', f'{discord_user}',
-        '--option', 'pick'
-    ]
-    #our process lets call it librarian#
-    librarian = await asyncio.create_subprocess_exec(*args,stdout = asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
-    
-    try:
-        stdout , stderr = await asyncio.wait_for(librarian.communicate(),timeout=90)
-    except asyncio.TimeoutError:
-        print("pick_service - terminated for taking too long")
-        return None
-    #print(stdout.decode(),stderr.decode())
-    stdout_decode = stdout.decode()
-    #stderr_decode = stderr.decode()
-    result = json.loads(stdout_decode)
-    if result.get('status') == 'success':
-        return result
-    return None # assuming if not success then failure    
+    script_results = await direct_bot(user=user,search=search,option='pick')
+
+    if script_results:
+        try:
+            script_results_parse = json.loads(script_results)
+            if script_results_parse.get('status') == 'success':
+                return {
+                    'message' : script_results_parse.get('message'),
+                    'metadata' : script_results_parse.get('metadata')
+                }
+        except Exception as e:
+            print(e)
+            pass
+    return None
+  
 
 async def _create_database_job(job_details):
     '''
