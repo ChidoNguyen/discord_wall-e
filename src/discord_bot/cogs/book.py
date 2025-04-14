@@ -10,8 +10,13 @@ import aiohttp
 import os
 import re
 class BookOptions(View):
-    def __init__(self, cog : commands.Cog, links: list, interaction : discord.Interaction):
-        super().__init__()
+    def __init__(self, 
+                 cog : commands.Cog, 
+                 links: list, 
+                 interaction : discord.Interaction,
+                 timeout=120
+                 ):
+        super().__init__(timeout=timeout)
         self.links = links
         self.cog = cog
         self.interaction = interaction
@@ -20,13 +25,21 @@ class BookOptions(View):
             url = json_data['link']
             new_button =ButtonEmbeddedLink(cog=self.cog,label=str(idx+1),user_option=url,parent_view = self)
             self.add_item(new_button)
+        # Cancel Button #
+        cancel_button = ButtonEmbeddedLink(cog=self.cog,label='X', user_option = None,parent_view=self,style=discord.ButtonStyle.danger)
+        self.add_item(cancel_button)
+
+    async def on_timeout(self):
+        if self.children:
+            self.clear_items()
+            if self.interaction:
+                og_resp = await self.interaction.original_response()
+                await og_resp.edit(content='```Expired```',view=self)
 
     async def disable_all_buttons(self):
         for butts in self.children:
             if isinstance(butts,Button):
                 butts.disabled = True
-        og_resp = await self.interaction.original_response()
-        await og_resp.edit(content = '<In progress>',view=self)
 
     async def attach_file(self,discord_file):
         self.clear_items()
@@ -34,19 +47,36 @@ class BookOptions(View):
         await og_resp.edit(content='<Finished>', attachments=[discord_file],view=self)
 
 class ButtonEmbeddedLink(Button):
-    def __init__(self, cog : commands.Cog, label , user_option : str ,  parent_view : BookOptions):
-        super().__init__(label = label, style = discord.ButtonStyle.primary)
+    def __init__(
+            self,
+            cog : commands.Cog, 
+            label : str , 
+            user_option : str ,  
+            parent_view : BookOptions,
+            style = discord.ButtonStyle.primary
+            ):
+        super().__init__(label=label, style=style)
         self.cog = cog
         self.user_option = user_option
         self.parent_view = parent_view
+    
+    async def cancel_pick(self,interaction: discord.Interaction, og_resp : discord.InteractionMessage):
+        self.parent_view.clear_items()
+        await og_resp.edit(content='```Canceled```',view=self.parent_view)
         
     async def callback(self,interaction : discord.Interaction):
         #should fire off the book request
         user_name = interaction.user.name
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
         await interaction.response.defer()
+        og_resp = await interaction.original_response()
         ####
         await self.parent_view.disable_all_buttons()
+        if self.label == 'X' and self.user_option is None:
+            await self.cancel_pick(interaction,og_resp)
+            return
+        await og_resp.edit(content="<In Progress",view=self.parent_view)
+        
         ###
         req_url = self.cog.api + self.cog.api_routes['pick']
         data = self.cog.json_payload(user=user_name,title=self.user_option)

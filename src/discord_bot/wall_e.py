@@ -40,7 +40,7 @@ async def on_ready():
 @app_commands.default_permissions(administrator=True)
 @app_commands.check(admin_check)
 async def kill_bot(interaction : discord.Interaction):
-    await interaction.response.send_message("Shutting down . . ." , ephemeral=True , delete_after = 15)
+    await interaction.response.send_message('# BOT IS OFFLINE')
     await bot.close()
 @kill_bot.error
 async def unauthorized_error(interaction : discord.Interaction, error):
