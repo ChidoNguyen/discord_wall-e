@@ -103,7 +103,7 @@ class Book(commands.Cog):
         user_name = interaction.user.name
         #sanitize cause discord lets "." come in
         user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name) #just do a remove
-        await interaction.response.send_message(f'Looking for {title} by {author}')
+        await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
         original_message = await interaction.original_response()
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['find']

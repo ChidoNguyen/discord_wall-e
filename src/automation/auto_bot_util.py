@@ -5,7 +5,19 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from src.automation.book_bot_output import book_bot_status
 from ebooklib import epub
-
+####ebooklib future/user warning ######
+import warnings
+warnings.filterwarnings(
+    'ignore', 
+    message = 'In the future version we will turn default option ignore_ncx to True.', 
+    category=UserWarning
+    )
+warnings.filterwarnings(
+    'ignore',
+    message=(".*This search incorrectly ignores the root element, and will be fixed in a future version.*"),
+    category=FutureWarning
+    )
+######
 def _navigate_download_history(bot_webdriver):
     """
     Function : Navigate to our target sites download history
