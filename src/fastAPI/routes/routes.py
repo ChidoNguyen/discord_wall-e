@@ -1,7 +1,7 @@
 from fastapi import APIRouter , BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict , Any , Union
-from ..services import find_service , find_hardmode_service, pick_service , cron_fake
+from ..services import find_service , find_hardmode_service, pick_service , cron_fake , catalog_service
 
 #### Routes - > Input validation / Handlings #####
 router = APIRouter()
@@ -58,4 +58,11 @@ async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_
     if novel is not None:
         background_tasks.add_task(cron_fake,job_json_data)
         return {"message" : 'acquired'}
+    return None
+
+@router.get("/catalog")
+async def catalog():
+    magazine = await catalog_service()
+    if magazine is not None:
+        return
     return None

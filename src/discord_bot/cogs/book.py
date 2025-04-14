@@ -5,7 +5,7 @@ from discord import app_commands
 from ..utils import discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
-
+from src.discord_bot.pagination import PaginatorView
 import aiohttp
 import os
 import re
@@ -235,6 +235,13 @@ class Book(commands.Cog):
             print(f"An unexpected error occurred: {e}")
         await user.send("Something went wrong sorry dude.")
 
-
+    @app_commands.command(name="catalog", description="do you like your finger before you turn the page?")
+    async def catalog(self, interaction: discord.Interaction):
+        try:
+            embeds = [discord.Embed(title=f"Page {i+1}", description=f"Content {i+1}") for i in range(5)]
+            view = PaginatorView(embeds)
+            await interaction.response.send_message(embed=embeds[0],view=view)
+        except Exception as e:
+            print(e)
 async def setup(bot):
     await bot.add_cog(Book(bot))

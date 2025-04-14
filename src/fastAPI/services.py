@@ -86,6 +86,15 @@ async def pick_service(book_info : dict, user_info : dict):
             pass
     return None
   
+async def catalog_service():
+    db_con = sqlite3.connect(DB_PATH)
+    cursor = db_con.cursor()
+    select_sql = "SELECT id,author,title FROM digital_brain WHERE author IS NOT NULL and title IS NOT NULL"
+    cursor.execute(select_sql)
+    data = cursor.fetchall()
+    #print(type(data),data)
+    db_con.close()
+    return data
 
 async def _create_database_job(job_details):
     '''
