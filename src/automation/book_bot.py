@@ -125,6 +125,7 @@ def _direct_script_validation(user:str, search:str, option:str):
     else:
         return True
     return False
+
 # CLI wrapper + direct callable
 async def direct_bot(user : str , search: str , option: str):
     """
@@ -178,8 +179,8 @@ async def direct_bot(user : str , search: str , option: str):
         if bot_driver and outcome:
             book_bot_status.set_status('success')
             book_bot_status.updates(('message',"successful download"))
-            print(book_bot_status.get_json_output())
-        return None
+            #print(book_bot_status.get_json_output())
+        return book_bot_status.get_json_output()
     except Exception as e:
         book_bot_status.updates(('message',e))
         print(book_bot_status.get_json_output())
@@ -191,6 +192,6 @@ async def direct_bot(user : str , search: str , option: str):
 def book_bot_cli():
     user,search,option = _arg_parse()
     result = asyncio.run(direct_bot(search=search,user=user,option=option))
-
+    return result
 if __name__ == '__main__':
     book_bot_cli()

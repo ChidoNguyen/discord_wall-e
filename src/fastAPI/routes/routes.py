@@ -31,11 +31,12 @@ async def find(unknown_book : UnknownBook, user_details : UserDetails, backgroun
     '''
     ###
     # _ , _ values are steps and misc for debugging if needed
-    req_status , job_json_data , message , _ , _ = novel.values()
+    #req_status , job_json_data , message , _ , _ = novel.values()
+    req_message , req_data = novel.values()
     #can narrow down check on novel for extra check but services already check that status is success
     ###
     if novel is not None:
-        background_tasks.add_task(cron_fake,job_json_data)
+        background_tasks.add_task(cron_fake,req_data)
         return {"message" : 'acquired'}
     return None
 

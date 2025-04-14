@@ -5,6 +5,8 @@ import os
 import shutil
 import sqlite3
 import time
+from src.automation.book_bot import direct_bot
+from src.automation.book_bot_output import book_bot_status
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
 load_dotenv()
@@ -28,7 +30,14 @@ async def find_service(book_info : dict, user_info : dict):
     discord_user = user_info['username']
 
     #arguments for book_bot#
-    args = [
+    script_results = await direct_bot(user=discord_user,search=f'{search_title} {search_author}',option='getbook')
+
+    script_result_decode = json.loads(script_results)
+    if script_result_decode.get('status') == 'success':
+        return {'message' : script_result_decode.get('message'), 'metadata' : script_result_decode.get('metadata')}
+    else:
+        return None
+    """ args = [
         system_specific, '-m',
         'src.automation.book_bot',
         '--search', f'{search_title} {search_author}',
@@ -49,7 +58,7 @@ async def find_service(book_info : dict, user_info : dict):
     result = json.loads(stdout_decode)
     if result.get('status') == 'success':
         return result
-    return None # assuming if not success then failure
+    return None # assuming if not success then failure """
 
 ########
 async def find_hardmode_service(book_info : dict, user_info : dict):
