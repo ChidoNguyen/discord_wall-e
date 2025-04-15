@@ -64,5 +64,5 @@ async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_
 async def catalog():
     magazine = await catalog_service()
     if magazine is not None:
-        return
+        return magazine
     return None

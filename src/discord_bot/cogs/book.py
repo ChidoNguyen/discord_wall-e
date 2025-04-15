@@ -5,7 +5,7 @@ from discord import app_commands
 from ..utils import discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
-from src.discord_bot.pagination import PaginatorView
+from src.discord_bot.pagination import PaginatorView , catalog_get_page_embed
 import aiohttp
 import os
 import re
@@ -127,6 +127,7 @@ class Book(commands.Cog):
         }
         return data
 
+    
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
@@ -237,11 +238,25 @@ class Book(commands.Cog):
 
     @app_commands.command(name="catalog", description="do you like your finger before you turn the page?")
     async def catalog(self, interaction: discord.Interaction):
+        url = self.api + '/catalog'
         try:
+            async with self.cog_api_session.get(url=url) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    if response_data is not None:
+                        #reponse data list[list[str]]
+                        embeds = catalog_get_page_embed(0,response_data)
+                        page_view = PaginatorView(response_data,interaction)
+                        await interaction.response.send_message(embed=embeds,view=page_view)
+        except Exception as e:
+            print(e)
+        return
+
+        """ try:
             embeds = [discord.Embed(title=f"Page {i+1}", description=f"Content {i+1}") for i in range(5)]
             view = PaginatorView(embeds)
             await interaction.response.send_message(embed=embeds[0],view=view)
         except Exception as e:
-            print(e)
+            print(e) """
 async def setup(bot):
     await bot.add_cog(Book(bot))
