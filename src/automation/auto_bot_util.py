@@ -123,4 +123,9 @@ def _get_download_metadata(target_file : str):
     #sanitize
     lit_author = re.sub(r'[<>:"/\\|?*]', '', lit_author)
     lit_title = re.sub(r'[<>:"/\\|?*]', '', lit_title)
+    #### Clean up author name ####
+    if ',' in lit_author:
+        #probably Last, First notation if , is present
+        name_parse = [item.strip() for item in lit_author.split(',')]
+        print(name_parse)
     return { 'author' : lit_author , 'title' : lit_title }

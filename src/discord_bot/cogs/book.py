@@ -190,7 +190,7 @@ class Book(commands.Cog):
                                 url = json_data['link']
                                 author = json_data['author']
                                 title = json_data['title']
-                                options_text += f"{idx}. `Title<{title}>` `Author<{author}>` [more](<{url.strip()}>).\n"
+                                options_text += f"{idx}. `Title<{title}>` `Author<{author}> ` [more info](<{url.strip()}>) \n"
                             await original_message.edit(content=options_text, view=option_view)
                             return
                         else:
@@ -252,11 +252,5 @@ class Book(commands.Cog):
             print(e)
         return
 
-        """ try:
-            embeds = [discord.Embed(title=f"Page {i+1}", description=f"Content {i+1}") for i in range(5)]
-            view = PaginatorView(embeds)
-            await interaction.response.send_message(embed=embeds[0],view=view)
-        except Exception as e:
-            print(e) """
 async def setup(bot):
     await bot.add_cog(Book(bot))

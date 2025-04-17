@@ -14,18 +14,22 @@ def catalog_get_page_embed(page : int , data : list[list[str]]):
     items_per = 10
     start , end = 0 + (page * items_per) , items_per + (page * items_per)
     # our "data"  [ int , str , str ]
-    # embed needs title 
+
     title = '# Catalog'
     embed_obj = discord.Embed(title=title)
-    #each field can be displayed Vertically...
-    #join each with new line \n
-    #we have a range of our data start->end
-    # we want to get id at index 0 
-    #for i in range(start,end):
-    #    id_col = '\n'.join(id_col,data[i][0]) # our id
-    id_col = '\n'.join(str(id[0]) for id in data[start:end])
-    auth_col = '\n'.join( info[1] for info in data[start:end])
-    title_col = '\n'.join(info[2] for info in data[start:end])
+
+    # fields build a column , parse out our DB row info by columns
+    item_id , auth , title = [] , [] , []
+
+    for row_id , row_auth , row_title  in data[start:end]:
+        item_id.append(str(row_id))
+        auth.append(row_auth)
+        title.append(row_title)
+
+    id_col = '\n'.join(item_id)
+    auth_col = '\n'.join(auth)
+    title_col = '\n'.join(title)
+
     embed_obj.add_field(
         name = 'ID',
         value = id_col,
@@ -48,14 +52,18 @@ class PaginatorView(View):
             self,
             data : list[list[str]],
             interaction : discord.Interaction,
-            timeout = 120,
+            per_page = 10,
+            timeout = 120
     ):
         super().__init__(timeout=timeout)
         self.data = data
+        self.per_page = per_page
         self.interaction = interaction
         self.cur_page = 0
 
-
+    async def on_timeout(self):
+        og_message = await self.interaction.original_response()
+        await og_message.edit(embed = None ,view = None, content="Move along nothing to see here.")
 
     @discord.ui.button(label='◀️',disabled=True,style=discord.ButtonStyle.gray)
     async def prev_page(self, interaction : discord.Interaction, button : Button):
@@ -63,13 +71,15 @@ class PaginatorView(View):
             self.cur_page -= 1
             self.prev_page.disabled = (self.cur_page == 0)
             self.next_page.disabled = (self.cur_page == len(self.data)-1)
-            await interaction.response.edit_message(embed=self.data[self.cur_page],view = self)
+            embed_view = catalog_get_page_embed(self.cur_page,self.data)
+            await interaction.response.edit_message(embed=embed_view,view = self)
 
     @discord.ui.button(label='▶️',style=discord.ButtonStyle.grey)
     async def next_page(self , interaction :discord.Interaction, button : Button):
-        if self.cur_page < len(self.pages) - 1:
+        if self.cur_page < len(self.data) - 1:
             self.cur_page += 1
-            self.next_page.disabled = (self.cur_page == len(self.data)-1)
+            self.next_page.disabled = (self.cur_page == -(-len(self.data)//self.per_page) - 1)
             self.prev_page.disabled = (self.cur_page == 0)
-            await interaction.response.edit_message(embed=self.data[self.cur_page],view=self)
+            embed_view = catalog_get_page_embed(self.cur_page,self.data)
+            await interaction.response.edit_message(embed=embed_view,view=self)
         
