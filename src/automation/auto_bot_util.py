@@ -127,5 +127,6 @@ def _get_download_metadata(target_file : str):
     if ',' in lit_author:
         #probably Last, First notation if , is present
         name_parse = [item.strip() for item in lit_author.split(',')]
-        print(name_parse)
+        if len(name_parse) >=2:
+            lit_author = ' '.join(c for c in name_parse[::-1]) #assuming naming is backwards right now
     return { 'author' : lit_author , 'title' : lit_title }
