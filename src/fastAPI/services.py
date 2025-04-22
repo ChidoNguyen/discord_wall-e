@@ -89,7 +89,7 @@ async def pick_service(book_info : dict, user_info : dict):
 async def catalog_service():
     db_con = sqlite3.connect(DB_PATH)
     cursor = db_con.cursor()
-    select_sql = "SELECT id,author,title FROM digital_brain WHERE author IS NOT NULL and title IS NOT NULL"
+    select_sql = "SELECT id,author_first_name,author_last_name,title FROM digital_brain"
     cursor.execute(select_sql)
     data = cursor.fetchall()
     #print(type(data),data)
@@ -100,7 +100,10 @@ async def _create_database_job(job_details):
     '''
     Params : Dictionary of info needed to do the job source path / author / title/ username
         source : str - full path to where the finished file is residing
-        author / title : str - used to format new file name during job
+        author : str
+        fname : str
+        lname : str
+        title : str 
         username : str - for catalog purposes
     Output : json job file will be created in env. defined directory 
     '''
@@ -133,17 +136,22 @@ async def to_the_vault(user):
     finally:
         return
 async def _register_vault(job_details):
-    source,title,author,username = job_details.values()
+    #all are expected to be present direct access for error raising
+    source = job_details['source']
+    aut_fname = job_details['fname']
+    aut_lname = job_details['lname']
+    title = job_details['title']
+    username = job_details['username']
     #db#
     db_con = sqlite3.connect(DB_PATH)
     cursor = db_con.cursor()
-    sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
-    cursor.execute(sql_insert_ignore,(title,author,username))
+    sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author_first_name,author_last_name,user) VALUES (?,?,?,?)"
+    cursor.execute(sql_insert_ignore,(title,aut_fname,aut_lname,username))
     #print(cursor.execute("SELECT * FROM digital_brain").fetchall())
     db_con.commit()
     db_con.close()
     ###
-
+    author = f'{aut_fname} {aut_lname}'.strip()
     if os.path.exists(source):
         try:
             moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))

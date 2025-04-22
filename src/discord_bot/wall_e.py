@@ -33,6 +33,7 @@ async def on_ready():
     #server_name = (discord.utils.get(bot.guilds,id=Janitors)).name
     #bot.tree.clear_commands(guild=discord.Object(id=Janitors))
     #print(f'Logged in as {bot.user} in {server_name}.')
+    #await bot.tree.clear_commands()
     await bot.tree.sync()
     print("Current loaded cogs: ",list(bot.cogs.keys()))
 

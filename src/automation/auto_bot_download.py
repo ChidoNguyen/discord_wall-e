@@ -25,7 +25,8 @@ def _rename_book_file(user_folder):
             raise OSError("Empty directory")
         newest = max(all_files, key = os.path.getctime)
         metadata = _get_download_metadata(newest)
-        new_title = f'{metadata["title"]} by {metadata["author"]}.epub'
+        author = f'{metadata['fname']} {metadata['lname']}'.strip()
+        new_title = f'{metadata["title"]} by {author}.epub'
         #os.rename(newest, os.path.join(user_folder,new_title))
         newname_file_path = shutil.move(newest,os.path.join(user_folder,new_title)) # acts the same in windows and linux env. vs os.rename
         head , username = os.path.split(user_folder)
@@ -34,7 +35,8 @@ def _rename_book_file(user_folder):
         file_info = {
             'source' : f'{newname_file_path}.finish',
             'title' : metadata['title'],
-            'author' : metadata['author'],
+            'fname' : metadata['fname'],
+            'lname' : metadata['lname'],
             'username' : username
         }
         book_bot_status.updates(('metadata',file_info))

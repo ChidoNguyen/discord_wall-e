@@ -15,15 +15,16 @@ def catalog_get_page_embed(page : int , data : list[list[str]]):
     start , end = 0 + (page * items_per) , items_per + (page * items_per)
     # our "data"  [ int , str , str ]
 
-    title = '# Catalog'
+    title = 'Catalog'
     embed_obj = discord.Embed(title=title)
 
     # fields build a column , parse out our DB row info by columns
     item_id , auth , title = [] , [] , []
 
-    for row_id , row_auth , row_title  in data[start:end]:
+    for row_id , row_fname, row_lname , row_title  in data[start:end]:
+        author = f'{row_fname} {row_lname}'
         item_id.append(str(row_id))
-        auth.append(row_auth)
+        auth.append(author.strip())
         title.append(row_title)
 
     id_col = '\n'.join(item_id)
@@ -45,6 +46,9 @@ def catalog_get_page_embed(page : int , data : list[list[str]]):
         value = auth_col,
         inline=True
     )
+
+    embed_obj.set_footer(text=f'Page {page + 1} of {-(-len(data)//items_per)}')
+
     return embed_obj
 class PaginatorView(View):
     
@@ -61,9 +65,14 @@ class PaginatorView(View):
         self.interaction = interaction
         self.cur_page = 0
 
+        #select module#
+        self.select = self.select_options()
+        self.add_item(self.select)
+
     async def on_timeout(self):
         og_message = await self.interaction.original_response()
         await og_message.edit(embed = None ,view = None, content="Move along nothing to see here.")
+
 
     @discord.ui.button(label='◀️',disabled=True,style=discord.ButtonStyle.gray)
     async def prev_page(self, interaction : discord.Interaction, button : Button):
@@ -83,3 +92,18 @@ class PaginatorView(View):
             embed_view = catalog_get_page_embed(self.cur_page,self.data)
             await interaction.response.edit_message(embed=embed_view,view=self)
         
+    def select_options(self):
+        #options are tied to embed view of current page
+        offset = self.per_page * self.cur_page
+        start = 0 + offset
+        end = self.per_page + offset
+        target_data = self.data[start:end]
+
+        # id , fname, lname , title 
+        selectOpts = []
+        for (id,fname,lname,title) in target_data:
+            select_label = f'Option {id} : {title}'
+            selectOpt_object = discord.SelectOption(label=select_label,value=id)
+            selectOpts.append(selectOpt_object)
+        return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
+

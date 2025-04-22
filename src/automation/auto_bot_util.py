@@ -123,10 +123,23 @@ def _get_download_metadata(target_file : str):
     #sanitize
     lit_author = re.sub(r'[<>:"/\\|?*]', '', lit_author)
     lit_title = re.sub(r'[<>:"/\\|?*]', '', lit_title)
-    #### Clean up author name ####
-    if ',' in lit_author:
-        #probably Last, First notation if , is present
-        name_parse = [item.strip() for item in lit_author.split(',')]
-        if len(name_parse) >=2:
-            lit_author = ' '.join(c for c in name_parse[::-1]) #assuming naming is backwards right now
-    return { 'author' : lit_author , 'title' : lit_title } 
+    #lit author clean up
+    lit_author = ' '.join(lit_author.strip().split())
+    fname , lname = '' , ''
+
+    #for lname, fname formatting
+    if ',' in lit_author: 
+        name_parse = [n.strip() for n in lit_author.split(',',1)]
+        lname = name_parse[0]
+        if len(name_parse) > 1:
+            fname = name_parse[1]
+    else:
+        name_parse = lit_author.split()
+        if len(name_parse) == 1:
+            lname = name_parse[0]
+        else:
+            fname = name_parse[0]
+            lname = ' '.join(name_parse[1:])
+
+    
+    return {'fname' : fname, 'lname' : lname, 'title' : lit_title } 
