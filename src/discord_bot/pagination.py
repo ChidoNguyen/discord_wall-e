@@ -20,7 +20,7 @@ class PaginatorView(View):
         self.per_page = per_page
         self.interaction = interaction
         self.cur_page = 0
-
+        self.max_pages = -(-len(self.data)//self.per_page) - 1
         #select module#
         self.select_drop_menu = self.select_options()
         self.add_item(self.select_drop_menu)
@@ -44,9 +44,9 @@ class PaginatorView(View):
     @discord.ui.button(label='▶️',style=discord.ButtonStyle.grey)
     async def next_page(self , interaction :discord.Interaction, button : Button):
         try:
-            if self.cur_page < -(-len(self.data)//self.per_page) - 1:
+            if self.cur_page < self.max_pages:
                 self.cur_page += 1
-                self.next_page.disabled = (self.cur_page == -(-len(self.data)//self.per_page) - 1)
+                self.next_page.disabled = (self.cur_page == self.max_pages)
                 self.prev_page.disabled = (self.cur_page == 0)
                 embed_view = self.create_catalog_embed()
                 await self.refresh_select_drop()
@@ -56,23 +56,24 @@ class PaginatorView(View):
             pass
     
     async def select_pick_callback(self, interaction: discord.Interaction):
+            import json
+            import io
+            await interaction.response.send_message("🔎")
+            og_response = await interaction.original_response()
+
             selected = interaction.data['values'][0]
-            try:
-                import json
-                import io
-                selected = json.loads(selected)
-                full_title = selected['full title'] + '.epub'
-                full_path = os.path.join(THE_VAULT,full_title)
-                if os.path.exists(full_path):
-                    with open(full_path, 'rb') as file:
-                        file_bytes = io.BytesIO(file.read())
-                    file_bytes.seek(0)
-                    attached_file = discord.File(fp=file_bytes,filename=full_title)
-                    await interaction.response.send_message(content='As requested.',file=attached_file)
-            except Exception as e:
-                print(e)
-                await interaction.response.send_message("Failed loading old catalog choice.")
-                pass
+            selected = json.loads(selected)
+
+            full_title = selected['full title'] + '.epub'
+            full_path = os.path.join(THE_VAULT,full_title)
+
+            if os.path.exists(full_path):
+                with open(full_path, 'rb') as file:
+                    file_bytes = io.BytesIO(file.read())
+                file_bytes.seek(0)
+                attached_file = discord.File(fp=file_bytes,filename=full_title)
+                await og_response.edit(content="✅",attachments=[attached_file])
+
 
     async def refresh_select_drop(self):
         self.remove_item(self.select_drop_menu)
@@ -106,9 +107,10 @@ class PaginatorView(View):
         # id , fname, lname , title 
         selectOpts = []
         for (id_,fname,lname,title) in target_data:
+            rng_emote=random.choice(book_emojis)
             author = f'{fname} {lname}'.strip()
             select_label = f"{title} by {author}"
-            selectOpt_object = discord.SelectOption(label=select_label,value=f'{{"id" : "{id_}", "full title" : "{select_label}"}}',emoji=random.choice(book_emojis),)
+            selectOpt_object = discord.SelectOption(label=select_label,value=f'{{"id" : "{id_}", "full title" : "{select_label}"}}',emoji=rng_emote)
             selectOpts.append(selectOpt_object)
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
 
@@ -128,7 +130,7 @@ class PaginatorView(View):
             embed_obj.add_field(
                 name='',
                 #value= f'**`{title} by {author}`**',
-                value=f'_{title}_\u2003`by`\u2003**{author}**',
+                value=f'**{title}**\u2003`by`\u2003_{author}_',
                 inline=False
             )
         return embed_obj
