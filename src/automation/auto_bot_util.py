@@ -138,8 +138,10 @@ def _get_download_metadata(target_file : str):
         if len(name_parse) == 1:
             lname = name_parse[0]
         else:
-            fname = name_parse[0]
-            lname = ' '.join(name_parse[1:])
+            lname = name_parse[-1]
+            fname = ' '.join(name_parse[:-1])
+            #fname = name_parse[0]
+            #lname = ' '.join(name_parse[1:])
 
     
     return {'fname' : fname, 'lname' : lname, 'title' : lit_title } 

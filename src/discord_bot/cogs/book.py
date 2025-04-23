@@ -245,8 +245,8 @@ class Book(commands.Cog):
                     response_data = await response.json()
                     if response_data is not None:
                         #reponse data list[list[str]]
-                        embeds = catalog_get_page_embed(0,response_data)
                         page_view = PaginatorView(response_data,interaction)
+                        embeds = page_view.create_catalog_embed()
                         await interaction.response.send_message(embed=embeds,view=page_view)
         except Exception as e:
             print(e)

@@ -46,9 +46,7 @@ def catalog_get_page_embed(page : int , data : list[list[str]]):
         value = auth_col,
         inline=True
     )
-
     embed_obj.set_footer(text=f'Page {page + 1} of {-(-len(data)//items_per)}')
-
     return embed_obj
 class PaginatorView(View):
     
@@ -66,8 +64,9 @@ class PaginatorView(View):
         self.cur_page = 0
 
         #select module#
-        self.select = self.select_options()
-        self.add_item(self.select)
+        self.select_drop_menu = self.select_options()
+        self.add_item(self.select_drop_menu)
+        self.select_drop_menu.callback = self.select_pick_callback
 
     async def on_timeout(self):
         og_message = await self.interaction.original_response()
@@ -80,7 +79,8 @@ class PaginatorView(View):
             self.cur_page -= 1
             self.prev_page.disabled = (self.cur_page == 0)
             self.next_page.disabled = (self.cur_page == len(self.data)-1)
-            embed_view = catalog_get_page_embed(self.cur_page,self.data)
+            embed_view = self.create_catalog_embed()
+            await self.refresh_select_drop()
             await interaction.response.edit_message(embed=embed_view,view = self)
 
     @discord.ui.button(label='▶️',style=discord.ButtonStyle.grey)
@@ -89,21 +89,68 @@ class PaginatorView(View):
             self.cur_page += 1
             self.next_page.disabled = (self.cur_page == -(-len(self.data)//self.per_page) - 1)
             self.prev_page.disabled = (self.cur_page == 0)
-            embed_view = catalog_get_page_embed(self.cur_page,self.data)
+            embed_view = self.create_catalog_embed()
+            await self.refresh_select_drop()
             await interaction.response.edit_message(embed=embed_view,view=self)
-        
+    
+    async def select_pick_callback(self, interaction: discord.Interaction):
+            selected = interaction.data['values'][0]
+            await interaction.response.send_message("ok")
+
+    async def refresh_select_drop(self):
+        self.remove_item(self.select_drop_menu)
+        self.select_drop_menu = self.select_options()
+        self.add_item(self.select_drop_menu)
+
     def select_options(self):
         #options are tied to embed view of current page
         offset = self.per_page * self.cur_page
         start = 0 + offset
         end = self.per_page + offset
         target_data = self.data[start:end]
-
+        import random
+        book_emojis = [
+            #"📚",  # Books - stack of books
+            #"📖",  # Open Book
+            "📕",  # Closed Red Book
+            "📗",  # Green Book
+            "📘",  # Blue Book
+            "📙",  # Orange Book
+            "📒",  # Ledger
+            "📓",  # Notebook
+            "📔",  # Notebook with Cover
+            "📜",  # Scroll
+            "📄",  # Page Facing Up
+            "📃",  # Page with Curl
+            "📑",  # Bookmark Tabs
+            "🔖",  # Bookmark
+        ]
         # id , fname, lname , title 
         selectOpts = []
         for (id,fname,lname,title) in target_data:
-            select_label = f'Option {id} : {title}'
-            selectOpt_object = discord.SelectOption(label=select_label,value=id)
+            author = f'{fname} {lname}'.strip()
+            select_label = f'{title} by {author}'
+            selectOpt_object = discord.SelectOption(label=select_label,value=id,emoji=random.choice(book_emojis))
             selectOpts.append(selectOpt_object)
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
 
+    def create_catalog_embed(self):
+        #10 items per page
+        offset = self.cur_page * self.per_page
+        start = 0 + offset
+        end = self.per_page + offset
+
+        embed_title = "📚 Catalog"
+        embed_obj = discord.Embed(title=embed_title)
+
+        for items in self.data[start:end]:
+            #id , fname , lname , title
+            id_ , fname, lname , title = items
+            author = f'{fname} {lname}'.strip()
+            embed_obj.add_field(
+                name='',
+                #value= f'**`{title} by {author}`**',
+                value=f'_{title}_\u2003`by`\u2003**{author}**',
+                inline=False
+            )
+        return embed_obj
