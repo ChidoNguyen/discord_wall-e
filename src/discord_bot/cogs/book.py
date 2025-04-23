@@ -152,7 +152,8 @@ class Book(commands.Cog):
                             tag_file_finish(finished_file)
                             return
                         else:
-                            print("Empty find response despite 200 response.")
+                            print("find - Empty find response despite 200 response.")
+                            await interaction.followup.send('Issue finding requested item.')
                     except Exception as e:
                         print(f'find request -  Failed to parse JSON: {e}')
                 else:
@@ -173,7 +174,7 @@ class Book(commands.Cog):
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['find_hardmode']
 
-        await interaction.response.send_message("Working on it.")
+        await interaction.response.send_message("Working on it...")
         original_message = await interaction.original_response()
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
@@ -194,7 +195,8 @@ class Book(commands.Cog):
                             await original_message.edit(content=options_text, view=option_view)
                             return
                         else:
-                            print("Empty job_status despite 200 response")
+                            print("find_hardmode : Empty job_status despite 200 response")
+                            await interaction.followup.send("No valid results were found.")
                     except Exception as e:
                         print(f'find_hardmode - failed to parse JSON: {e}')
                 else:
@@ -238,6 +240,7 @@ class Book(commands.Cog):
 
     @app_commands.command(name="catalog", description="do you like your finger before you turn the page?")
     async def catalog(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         url = self.api + '/catalog'
         try:
             async with self.cog_api_session.get(url=url) as response:
@@ -247,7 +250,7 @@ class Book(commands.Cog):
                         #reponse data list[list[str]]
                         page_view = PaginatorView(response_data,interaction)
                         embeds = page_view.create_catalog_embed()
-                        await interaction.response.send_message(embed=embeds,view=page_view)
+                        await interaction.followup.send(embed=embeds,view=page_view)
         except Exception as e:
             print(e)
         return

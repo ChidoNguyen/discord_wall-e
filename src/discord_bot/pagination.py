@@ -1,6 +1,7 @@
 import discord
 import discord.interactions
 from discord.ui import View, Button
+import random
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -55,10 +56,34 @@ class PaginatorView(View):
             print(e)
             pass
     
+    @discord.ui.button(label='❌', style = discord.ButtonStyle.grey)
+    async def clear_catalog(self , interaction : discord.Interaction, button : Button):
+        #clear embed view
+        trash_emojis = [
+            "🗑️",  # Trash can
+            "🚮",  # Litter in bin sign
+            "❌",  # Cross mark
+            "🧹",  # Broom
+            "🧼",  # Soap
+            "🔥",  # Fire
+            "💣",  # Bomb
+            "💥",  # Collision
+            "♻️",  # Recycle
+            "🧻",  # Toilet paper
+            "🧺"   # Basket
+        ]
+
+        await interaction.response.edit_message(
+            content=random.choice(trash_emojis),
+            embed=None,
+            view=None
+        )
+        self.stop()
+
     async def select_pick_callback(self, interaction: discord.Interaction):
             import json
             import io
-            await interaction.response.send_message("🔎")
+            await interaction.response.send_message("🔎",ephemeral=True,delete_after=75)
             og_response = await interaction.original_response()
 
             selected = interaction.data['values'][0]
@@ -72,7 +97,7 @@ class PaginatorView(View):
                     file_bytes = io.BytesIO(file.read())
                 file_bytes.seek(0)
                 attached_file = discord.File(fp=file_bytes,filename=full_title)
-                await og_response.edit(content="✅",attachments=[attached_file])
+                await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
 
 
     async def refresh_select_drop(self):
@@ -87,7 +112,6 @@ class PaginatorView(View):
         start = 0 + offset
         end = self.per_page + offset
         target_data = self.data[start:end]
-        import random
         book_emojis = [
             #"📚",  # Books - stack of books
             #"📖",  # Open Book
