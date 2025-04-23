@@ -75,7 +75,7 @@ class ButtonEmbeddedLink(Button):
         if self.label == 'X' and self.user_option is None:
             await self.cancel_pick(interaction,og_resp)
             return
-        await og_resp.edit(content="<In Progress",view=self.parent_view)
+        await og_resp.edit(content="<In Progress>",view=self.parent_view)
         
         ###
         req_url = self.cog.api + self.cog.api_routes['pick']
@@ -146,7 +146,7 @@ class Book(commands.Cog):
                         if job_status is not None:
                             to_be_attached, finished_file = discord_file_creation(user_name)
                             await original_message.edit(content=
-                                f'{original_message.content}\n<Finished> {interaction.user.mention}',
+                                f'<Finished> {interaction.user.mention}',
                                 attachments=[to_be_attached]
                                 )
                             tag_file_finish(finished_file)
