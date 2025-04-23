@@ -5,7 +5,7 @@ from discord import app_commands
 from ..utils import discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
-from src.discord_bot.pagination import PaginatorView , catalog_get_page_embed
+from src.discord_bot.pagination import PaginatorView 
 import aiohttp
 import os
 import re

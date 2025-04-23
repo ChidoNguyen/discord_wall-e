@@ -1,53 +1,11 @@
 import discord
 import discord.interactions
 from discord.ui import View, Button
+import os
+from dotenv import load_dotenv
+load_dotenv()
+THE_VAULT = os.getenv('THE_VAULT')
 
-def catalog_get_page_embed(page : int , data : list[list[str]]):
-    '''
-    Function : returns a discord.Embed() object for rendering
-    '''
-
-    # title - titles our embed view
-    # fields - used to generate the mock-up item listings
-    # inline to side-by-side id-title-author
-    
-    items_per = 10
-    start , end = 0 + (page * items_per) , items_per + (page * items_per)
-    # our "data"  [ int , str , str ]
-
-    title = 'Catalog'
-    embed_obj = discord.Embed(title=title)
-
-    # fields build a column , parse out our DB row info by columns
-    item_id , auth , title = [] , [] , []
-
-    for row_id , row_fname, row_lname , row_title  in data[start:end]:
-        author = f'{row_fname} {row_lname}'
-        item_id.append(str(row_id))
-        auth.append(author.strip())
-        title.append(row_title)
-
-    id_col = '\n'.join(item_id)
-    auth_col = '\n'.join(auth)
-    title_col = '\n'.join(title)
-
-    embed_obj.add_field(
-        name = 'ID',
-        value = id_col,
-        inline=True
-    )
-    embed_obj.add_field(
-        name = 'Title',
-        value = title_col,
-        inline = True
-    )
-    embed_obj.add_field(
-        name = 'Author',
-        value = auth_col,
-        inline=True
-    )
-    embed_obj.set_footer(text=f'Page {page + 1} of {-(-len(data)//items_per)}')
-    return embed_obj
 class PaginatorView(View):
     
     def __init__(
@@ -85,22 +43,42 @@ class PaginatorView(View):
 
     @discord.ui.button(label='▶️',style=discord.ButtonStyle.grey)
     async def next_page(self , interaction :discord.Interaction, button : Button):
-        if self.cur_page < len(self.data) - 1:
-            self.cur_page += 1
-            self.next_page.disabled = (self.cur_page == -(-len(self.data)//self.per_page) - 1)
-            self.prev_page.disabled = (self.cur_page == 0)
-            embed_view = self.create_catalog_embed()
-            await self.refresh_select_drop()
-            await interaction.response.edit_message(embed=embed_view,view=self)
+        try:
+            if self.cur_page < -(-len(self.data)//self.per_page) - 1:
+                self.cur_page += 1
+                self.next_page.disabled = (self.cur_page == -(-len(self.data)//self.per_page) - 1)
+                self.prev_page.disabled = (self.cur_page == 0)
+                embed_view = self.create_catalog_embed()
+                await self.refresh_select_drop()
+                await interaction.response.edit_message(embed=embed_view,view=self)
+        except Exception as e:
+            print(e)
+            pass
     
     async def select_pick_callback(self, interaction: discord.Interaction):
             selected = interaction.data['values'][0]
-            await interaction.response.send_message("ok")
+            try:
+                import json
+                import io
+                selected = json.loads(selected)
+                full_title = selected['full title'] + '.epub'
+                full_path = os.path.join(THE_VAULT,full_title)
+                if os.path.exists(full_path):
+                    with open(full_path, 'rb') as file:
+                        file_bytes = io.BytesIO(file.read())
+                    file_bytes.seek(0)
+                    attached_file = discord.File(fp=file_bytes,filename=full_title)
+                    await interaction.response.send_message(content='As requested.',file=attached_file)
+            except Exception as e:
+                print(e)
+                await interaction.response.send_message("Failed loading old catalog choice.")
+                pass
 
     async def refresh_select_drop(self):
         self.remove_item(self.select_drop_menu)
         self.select_drop_menu = self.select_options()
         self.add_item(self.select_drop_menu)
+        self.select_drop_menu.callback = self.select_pick_callback
 
     def select_options(self):
         #options are tied to embed view of current page
@@ -127,10 +105,10 @@ class PaginatorView(View):
         ]
         # id , fname, lname , title 
         selectOpts = []
-        for (id,fname,lname,title) in target_data:
+        for (id_,fname,lname,title) in target_data:
             author = f'{fname} {lname}'.strip()
-            select_label = f'{title} by {author}'
-            selectOpt_object = discord.SelectOption(label=select_label,value=id,emoji=random.choice(book_emojis))
+            select_label = f"{title} by {author}"
+            selectOpt_object = discord.SelectOption(label=select_label,value=f'{{"id" : "{id_}", "full title" : "{select_label}"}}',emoji=random.choice(book_emojis),)
             selectOpts.append(selectOpt_object)
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
 
