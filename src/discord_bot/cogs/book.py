@@ -153,7 +153,7 @@ class Book(commands.Cog):
                             return
                         else:
                             print("find - Empty find response despite 200 response.")
-                            await interaction.followup.send('Issue finding requested item.')
+                            await interaction.followup.send('Issue finding requested item.',ephemeral=True)
                     except Exception as e:
                         print(f'find request -  Failed to parse JSON: {e}')
                 else:
@@ -196,7 +196,7 @@ class Book(commands.Cog):
                             return
                         else:
                             print("find_hardmode : Empty job_status despite 200 response")
-                            await interaction.followup.send("No valid results were found.")
+                            await interaction.followup.send("No valid results were found." , ephemeral=True)
                     except Exception as e:
                         print(f'find_hardmode - failed to parse JSON: {e}')
                 else:

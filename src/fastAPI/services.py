@@ -94,6 +94,14 @@ async def catalog_service():
     data = cursor.fetchall()
     #print(type(data),data)
     db_con.close()
+
+    cache_info_path = os.path.join(THE_VAULT,'cache')
+    catalog_info_file = 'cata_cache.json'
+    catalog_cache_path = os.path.join(cache_info_path,catalog_info_file)
+    with open(catalog_cache_path) as file:
+        tmp =file.read()
+    print(tmp)
+    
     return data
 
 async def _create_database_job(job_details):
@@ -132,7 +140,7 @@ async def to_the_vault(user):
         for files in os.listdir(userfolder):
             dir_files.append(os.path.join(userfolder,files))
         newest_file = max(dir_files,key=os.path.getctime)
-        shutil.move(newest_file,THE_VAULT)
+        shutil.move(newest_file,os.path.join(THE_VAULT,'the_goods'))
     finally:
         return
 async def _register_vault(job_details):
@@ -154,7 +162,7 @@ async def _register_vault(job_details):
     author = f'{aut_fname} {aut_lname}'.strip()
     if os.path.exists(source):
         try:
-            moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+            moved_path = shutil.move(source,os.path.join(os.path.join(THE_VAULT,'the_goods'),f'{title} by {author}.epub'))
             return True , moved_path
         except Exception as e:
             return False,f'Error shutil.move() - {e}'
