@@ -134,7 +134,7 @@ class PaginatorView(View):
             rng_emote=random.choice(book_emojis)
             author = f'{fname} {lname}'.strip()
             select_label = f"{title} by {author}"
-            selectOpt_object = discord.SelectOption(label=select_label,value=f'{{"id" : "{id_}", "full title" : "{select_label}"}}',emoji=rng_emote)
+            selectOpt_object = discord.SelectOption(label=select_label,value=f'{id}**{select_label}',emoji=rng_emote)
             selectOpts.append(selectOpt_object)
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
 

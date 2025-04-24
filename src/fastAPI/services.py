@@ -95,15 +95,15 @@ async def catalog_service():
     #print(type(data),data)
     db_con.close()
 
+    
+    return data
+def holder():
     cache_info_path = os.path.join(THE_VAULT,'cache')
-    catalog_info_file = 'cata_cache.json'
+    catalog_info_file = 'cache_info.json'
     catalog_cache_path = os.path.join(cache_info_path,catalog_info_file)
     with open(catalog_cache_path) as file:
         tmp =file.read()
     print(tmp)
-    
-    return data
-
 async def _create_database_job(job_details):
     '''
     Params : Dictionary of info needed to do the job source path / author / title/ username
