@@ -6,12 +6,14 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 THE_VAULT = os.getenv('THE_VAULT')
-
+'''
+data items are id mappings id : {fname , lname , author , title , file name}
+'''
 class PaginatorView(View):
     
     def __init__(
             self,
-            data : list[list[str]],
+            data ,
             interaction : discord.Interaction,
             per_page = 10,
             timeout = 120
@@ -87,7 +89,15 @@ class PaginatorView(View):
             og_response = await interaction.original_response()
 
             selected = interaction.data['values'][0]
-            selected = json.loads(selected)
+            id_info = self.data[selected] 
+            selected_file = os.path.join(os.path.join(THE_VAULT,'the_goods'),id_info.filename)
+            if os.path.exists(selected_file):
+                with open(selected_file,'rb') as file:
+                    file_bytes = io.BytesIO(file.read())
+                file_bytes.seek(0)
+                attached_file = discord.File(fp=file_bytes,filename=id_info.filename)
+                await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
+            '''selected = json.loads(selected)
 
             full_title = selected['full title'] + '.epub'
             full_path = os.path.join(THE_VAULT,full_title)
@@ -97,7 +107,7 @@ class PaginatorView(View):
                     file_bytes = io.BytesIO(file.read())
                 file_bytes.seek(0)
                 attached_file = discord.File(fp=file_bytes,filename=full_title)
-                await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
+                await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])'''
 
 
     async def refresh_select_drop(self):
@@ -130,12 +140,18 @@ class PaginatorView(View):
         ]
         # id , fname, lname , title 
         selectOpts = []
-        for (id_,fname,lname,title) in target_data:
+        for item in target_data:
+            rng_emote=random.choice(book_emojis)
+            select_label = f'{item.title} by {item.author}'
+            selectOpt_object = discord.SelectOption(label=select_label[:100],value=item.id,description=item.author,emoji=rng_emote)
+            selectOpts.append(selectOpt_object)
+
+        """ for (id_,fname,lname,title) in target_data:
             rng_emote=random.choice(book_emojis)
             author = f'{fname} {lname}'.strip()
             select_label = f"{title} by {author}"
             selectOpt_object = discord.SelectOption(label=select_label,value=f'{id}**{select_label}',emoji=rng_emote)
-            selectOpts.append(selectOpt_object)
+            selectOpts.append(selectOpt_object) """
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
 
     def create_catalog_embed(self):
@@ -149,12 +165,12 @@ class PaginatorView(View):
 
         for items in self.data[start:end]:
             #id , fname , lname , title
-            id_ , fname, lname , title = items
-            author = f'{fname} {lname}'.strip()
+            #id_ , fname, lname , title = items
+            #author = f'{fname} {lname}'.strip()
             embed_obj.add_field(
                 name='',
                 #value= f'**`{title} by {author}`**',
-                value=f'**{title}**\u2003`by`\u2003_{author}_',
+                value=f'**{items.title}**\u2003`by`\u2003_{items.author}_',
                 inline=False
             )
         return embed_obj

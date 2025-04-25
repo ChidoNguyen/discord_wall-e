@@ -6,6 +6,7 @@ import shutil
 import sqlite3
 import time
 from src.automation.book_bot import direct_bot
+from src.fastAPI.catalog_cache import get_cache_data
 from dotenv import load_dotenv
 #from src.automation.book_bot import book_bot
 load_dotenv()
@@ -87,16 +88,8 @@ async def pick_service(book_info : dict, user_info : dict):
     return None
   
 async def catalog_service():
-    db_con = sqlite3.connect(DB_PATH)
-    cursor = db_con.cursor()
-    select_sql = "SELECT id,author_first_name,author_last_name,title FROM digital_brain"
-    cursor.execute(select_sql)
-    data = cursor.fetchall()
-    #print(type(data),data)
-    db_con.close()
+    return get_cache_data()
 
-    
-    return data
 def holder():
     cache_info_path = os.path.join(THE_VAULT,'cache')
     catalog_info_file = 'cache_info.json'
@@ -104,6 +97,7 @@ def holder():
     with open(catalog_cache_path) as file:
         tmp =file.read()
     print(tmp)
+
 async def _create_database_job(job_details):
     '''
     Params : Dictionary of info needed to do the job source path / author / title/ username

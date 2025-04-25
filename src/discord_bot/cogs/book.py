@@ -238,7 +238,7 @@ class Book(commands.Cog):
             print(f"An unexpected error occurred: {e}")
         await user.send("Something went wrong sorry dude.")
 
-    @app_commands.command(name="catalog", description="do you like your finger before you turn the page?")
+    @app_commands.command(name="catalog", description="do you lick your finger before you turn the page?")
     async def catalog(self, interaction: discord.Interaction):
         await interaction.response.defer()
         url = self.api + '/catalog'
