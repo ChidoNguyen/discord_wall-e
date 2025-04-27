@@ -88,15 +88,8 @@ async def pick_service(book_info : dict, user_info : dict):
     return None
   
 async def catalog_service():
+    await cron_fake(None)
     return get_cache_data()
-
-def holder():
-    cache_info_path = os.path.join(THE_VAULT,'cache')
-    catalog_info_file = 'cache_info.json'
-    catalog_cache_path = os.path.join(cache_info_path,catalog_info_file)
-    with open(catalog_cache_path) as file:
-        tmp =file.read()
-    print(tmp)
 
 async def _create_database_job(job_details):
     '''
@@ -165,7 +158,8 @@ async def _register_vault(job_details):
             
 
 async def cron_fake(job_details):
-    await _create_database_job(job_details)
+    if job_details is not None:
+        await _create_database_job(job_details)
     job_listings = [os.path.join(THE_JOBS,files) for files in os.listdir(THE_JOBS) if files.endswith('json')]
     for items in job_listings:
         with open(items, 'r') as f:

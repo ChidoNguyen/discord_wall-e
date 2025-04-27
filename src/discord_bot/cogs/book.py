@@ -252,7 +252,7 @@ class Book(commands.Cog):
                         embeds = page_view.create_catalog_embed()
                         await interaction.followup.send(embed=embeds,view=page_view)
         except Exception as e:
-            print(e)
+            print(f'pagination of catalog error - {e}')
         return
 
 async def setup(bot):
