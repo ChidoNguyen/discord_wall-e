@@ -1,16 +1,18 @@
 import os
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass , asdict
 from src.env_config import THE_VAULT , DB_PATH
+########
+cache_data_filename = 'cache_info.json'
+cache_folder = os.path.join(THE_VAULT,'cache') #os env later
+watched_folder = os.path.join(THE_VAULT,'the_goods') #os env later as well
 
-cache_filename = 'cache_info.json'
-cache_folder_name = 'cache'
-watched_folder = 'the_goods'
-cache_local = os.path.join(THE_VAULT,cache_folder_name)
 
-#for id building w/o zipping and extracting cursor row factory
+
+#for id_map building w/o zipping and extracting cursor row factory
+DB_FIELDS = ('id','title','author_first_name','author_last_name')
 @dataclass
-class RowKeys:
+class FileInfo:
     id: int
     title: str
     fname: str
@@ -21,45 +23,72 @@ class RowKeys:
     @property
     def filename(self):
         return f'{self.title} by {self.author}.epub'
-
-def check_cache_structure_integrity(cache_data):
-    """
-    cache_json = {
-        'mtime' : float
-        'data' : {
-            'id_list' : list[]
-            'id_map' : dict()
-        }
-    }
-    """
-    if not isinstance(cache_data,dict):
-        return False
-    #main json struc
-    if 'mtime' not in cache_data or not isinstance(cache_data['mtime'],float):
-        return False
-    if 'data' not in cache_data or not isinstance(cache_data['data'],dict):
-        return False
-    #required data
-    if 'id_list' not in cache_data['data'] or not isinstance(cache_data['data']['id_list'], list):
-        return False
-    if 'id_map' not in cache_data['data'] or not isinstance(cache_data['data']['id_map'],dict):
-        return False
     
-    return True
-
-def read_cache_info():
-    #check for file and info 
-    try:
-        with open(os.path.join(cache_local,cache_filename) , 'r') as file:
-            return json.load(file)
-    except (FileNotFoundError,json.JSONDecodeError):
-        return None
-    
-def update_cache_info(data):
-    with open(os.path.join(cache_local,cache_filename),'w') as f:
-        json.dump(data,f)
+@dataclass
+class CacheResult:
+    id_map : dict[int,FileInfo]
+    id_list: list[int]
 
 def retrieve_db_info():
+    import sqlite3
+    con = sqlite3.connect(DB_PATH)
+    cursor = con.cursor()
+    select_clause = f"SELECT {', '.join(DB_FIELDS)} FROM digital_brain"
+    cursor.execute(select_clause)
+    results = cursor.fetchall()
+    con.close()
+    return results
+
+def read_cache_info(cache_file = os.path.join(cache_folder,cache_data_filename)):
+    try:
+        with open(cache_file , 'r') as file:
+            raw =  json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    #key check
+    req_key = ['mtime' , 'data']
+    if not all(key in raw for key in req_key):
+        return None
+    
+    raw_data = raw['data']
+
+    #key check
+    req_data_key = ['id_map','id_list']
+    if not all(key in raw_data for key in req_data_key):
+        return None
+    try:
+        raw_id_map = {
+            int(k) : FileInfo(**v) for (k,v) in raw_data['id_map'].items()
+        }
+    except (TypeError,ValueError) :
+        return None
+
+    cached_result = CacheResult(id_map=raw_id_map , id_list=raw_data['id_list'])
+
+    loaded_cache = {
+        'mtime' : raw['mtime'],
+        'data' : cached_result
+    }
+    return loaded_cache
+
+def valid_cache(cache_data):
+    return cache_data['mtime'] == os.path.getmtime(watched_folder)
+    
+def write_cache_data(new_cache , cache_file = os.path.join(cache_folder,cache_data_filename)):
+    upd_cache = {
+        'mtime' : os.path.getmtime(watched_folder),
+        'data' : asdict(new_cache)
+    }
+    try:
+        with open(cache_file , 'w') as file:
+            json.dump(
+                upd_cache,
+                fp=file,indent=4
+            )
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+def get_db_data():
     import sqlite3
     con = sqlite3.connect(DB_PATH)
     cursor = con.cursor()
@@ -68,53 +97,26 @@ def retrieve_db_info():
     con.close()
     return results
 
-def build_cache_data():
-    data = retrieve_db_info()
-    #items in data are tuples , unzip and convert to dataclass
-    data_dump = [RowKeys(*items) for items in data]
-    return data_dump
+def build_new_cache():
+    db_info = retrieve_db_info()
 
-def build_cache_id_map(cache_data : list[RowKeys]):
-    #cache_data is a list of our dataclass
-    #for every ID -> 
-    id_map = {
-        item.id : { 
-            'fname' : item.fname,
-            'lname' : item.lname,
-            'author' :item.author,
-            'title' : item.title,
-            'filename' : item.filename
-            } for item in cache_data
-    }
-    id_list = [ item.id for item in cache_data]
-    return id_map , id_list
-def cache_is_valid(cache_data):
-    if cache_data is None:
-        return False
-    if not check_cache_structure_integrity(cache_data):
-        return False
-    cached_mtime = cache_data.get('mtime')
-    cur_mtime = os.path.getmtime(os.path.join(THE_VAULT,watched_folder))
-    return cached_mtime == cur_mtime
+    file_info = [FileInfo(*item) for item in db_info]
 
-def get_cache_data():
-    cache_data = read_cache_info()
-    if cache_is_valid(cache_data):
-        return cache_data['data']
-    new_data_id_map , new_id_list = build_cache_id_map(build_cache_data())
-    new_cache = {
-        'mtime' : os.path.getmtime(os.path.join(THE_VAULT,watched_folder)),
-        'data' : {
-            'id_map' : new_data_id_map,
-            'id_list' : new_id_list
-            }
-    }
-    update_cache_info(new_cache)
-    return new_cache['data']
+    id_map = {int(item.id) : item for item in file_info}
+    id_list = list(id_map)
 
-def main():
-    data = get_cache_data()
-    return data
+    return CacheResult(id_map=id_map,id_list=id_list)
 
+def get_cache_data(json_transfer = True):
+    #read in what we have
+    #verify
+    cur_data = read_cache_info()
+    if cur_data is not None and valid_cache(cur_data):
+        return  asdict(cur_data['data']) if json_transfer else cur_data['data']
+    new_cache = build_new_cache()
+    write_cache_data(new_cache)
+    return asdict(new_cache) if json_transfer else new_cache
+    
 if __name__ == '__main__':
-    main()
+    tmp = get_cache_data(json_transfer=False)
+    print(tmp)

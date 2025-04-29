@@ -89,7 +89,7 @@ async def pick_service(book_info : dict, user_info : dict):
   
 async def catalog_service():
     await cron_fake(None)
-    return get_cache_data()
+    return {'catalog' : get_cache_data()}
 
 async def _create_database_job(job_details):
     '''

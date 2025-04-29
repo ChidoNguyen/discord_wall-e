@@ -3,25 +3,32 @@ import discord.interactions
 from discord.ui import View, Button
 import random
 import os
+from src.fastAPI.catalog_cache import FileInfo , CacheResult
 from dotenv import load_dotenv
 load_dotenv()
 THE_VAULT = os.getenv('THE_VAULT')
 '''
 data items are id mappings id : {fname , lname , author , title , file name}
 '''
+def cache_result_transform(data) -> CacheResult:
+    cache_results=CacheResult(
+            id_map = { int(key) : FileInfo(**value) for (key,value) in data['id_map'].items()},
+            id_list = data['id_list']
+            )
+    return cache_results.id_map , cache_results.id_list
 
 class PaginatorView(View):
     
     def __init__(
             self,
-            data ,
+            data,
             interaction : discord.Interaction,
             per_page = 10,
             timeout = 120
     ):
         super().__init__(timeout=timeout)
-        self.data_id_list = data['id_list']
-        self.data_id_map = data['id_map']
+        self.data_id_map , self.data_id_list = cache_result_transform(data)
+
         self.per_page = per_page
         self.interaction = interaction
         self.cur_page = 0
@@ -35,9 +42,8 @@ class PaginatorView(View):
         og_message = await self.interaction.original_response()
         await og_message.edit(embed = None ,view = None, content="Move along nothing to see here.")
 
-    def id_lookup(self, opt_id):
-        opt_id = str(opt_id)
-        return self.data_id_map[opt_id] if opt_id in self.data_id_map else None
+    def id_lookup(self, opt_id) -> FileInfo:
+        return self.data_id_map[int(opt_id)]
         
 
     @discord.ui.button(label='◀️',disabled=True,style=discord.ButtonStyle.gray)
@@ -89,21 +95,22 @@ class PaginatorView(View):
         self.stop()
 
     async def select_pick_callback(self, interaction: discord.Interaction):
-            import json
             import io
-            await interaction.response.send_message("🔎",ephemeral=True,delete_after=75)
-            og_response = await interaction.original_response()
+            try:
+                await interaction.response.send_message("🔎",ephemeral=True,delete_after=75)
+                og_response = await interaction.original_response()
 
-            selected = interaction.data['values'][0]
-            id_info = self.id_lookup(selected)
-            selected_file = os.path.join(os.path.join(THE_VAULT,'the_goods'),id_info['filename'])
-            if os.path.exists(selected_file):
-                with open(selected_file,'rb') as file:
-                    file_bytes = io.BytesIO(file.read())
-                file_bytes.seek(0)
-                attached_file = discord.File(fp=file_bytes,filename=id_info['filename'])
-                await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
-
+                selected = interaction.data['values'][0]
+                option = self.id_lookup(selected)
+                selected_file = os.path.join(os.path.join(THE_VAULT,'the_goods'),option.filename)
+                if os.path.exists(selected_file):
+                    with open(selected_file,'rb') as file:
+                        file_bytes = io.BytesIO(file.read())
+                    file_bytes.seek(0)
+                    attached_file = discord.File(fp=file_bytes,filename=option.filename)
+                    await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
+            except Exception as e:
+                print(f'{e}')
 
 
     async def refresh_select_drop(self):
@@ -137,12 +144,12 @@ class PaginatorView(View):
         # id , fname, lname , title 
         selectOpts = []
         for opt_id in target_data:
-            item = self.id_lookup(opt_id)
-            if item is None:
+            option = self.id_lookup(opt_id)
+            if option is None:
                 continue
             rng_emote=random.choice(book_emojis)
-            select_label = f'{item["title"]} by {item["author"]}'
-            selectOpt_object = discord.SelectOption(label=select_label[:100],value=opt_id,description=item['author'],emoji=rng_emote)
+            select_label = f'{option.title} by {option.author}'
+            selectOpt_object = discord.SelectOption(label=select_label[:100],value=opt_id,description=option.author,emoji=rng_emote)
             selectOpts.append(selectOpt_object)
 
         return discord.ui.Select(placeholder="What do you want?", options=selectOpts)
@@ -160,13 +167,13 @@ class PaginatorView(View):
             #id , fname , lname , title
             #id_ , fname, lname , title = items
             #author = f'{fname} {lname}'.strip()
-            items = self.id_lookup(opt_id)
-            if items is None:
+            option = self.id_lookup(opt_id)
+            if option is None:
                 continue
             embed_obj.add_field(
                 name='',
                 #value= f'**`{title} by {author}`**',
-                value=f'**{items["title"]}**\u2003`by`\u2003_{items["author"]}_',
+                value=f'**{option.title}**\u2003`by`\u2003_{option.author}_',
                 inline=False
             )
         return embed_obj
