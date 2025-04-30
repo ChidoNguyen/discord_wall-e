@@ -2,14 +2,25 @@ import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
-from ..utils import discord_file_creation , book_search_output , tag_file_finish
+from ..utils import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
 from src.discord_bot.pagination import PaginatorView 
 import aiohttp
 import os
-import re
 class BookOptions(View):
+    """
+    Class : BookOptions -  Custom discord bot UI for handling interactions with search results.
+    
+    View generates formatted text to provide users with <author> <title> information and <link> for user to dig deeper if needed.
+    Also creates buttons related to each result choice provided.
+
+    Attributes:
+        cog : commands.Cog : the discord commands Cog this view is associated with. -> main purpose to have access to the clientSession() object in parent.
+        links : list :  a list of links to be handled by the view
+        interaction : discord.Interaction : the discord interaction that initiated the creation of the view
+
+    """
     def __init__(self, 
                  cog : commands.Cog, 
                  links: list, 
@@ -20,13 +31,28 @@ class BookOptions(View):
         self.links = links
         self.cog = cog
         self.interaction = interaction
+        self._add_buttons()
 
-        for idx,json_data in enumerate(links):
+    def _add_buttons(self):
+        """ Creates a Button for each link , and a cancel button. """
+        for idx,json_data in enumerate(self.links):
             url = json_data['link']
-            new_button =ButtonEmbeddedLink(cog=self.cog,label=str(idx+1),user_option=url,parent_view = self)
+            new_button =ButtonEmbeddedLink(
+                cog=self.cog,
+                label=str(idx+1),
+                user_option=url,
+                parent_view = self
+                )
             self.add_item(new_button)
+
         # Cancel Button #
-        cancel_button = ButtonEmbeddedLink(cog=self.cog,label='X', user_option = None,parent_view=self,style=discord.ButtonStyle.danger)
+        cancel_button = ButtonEmbeddedLink(
+            cog=self.cog,
+            label='X',
+              user_option = None,
+              parent_view=self,
+              style=discord.ButtonStyle.danger
+              )
         self.add_item(cancel_button)
 
     async def on_timeout(self):
@@ -37,16 +63,26 @@ class BookOptions(View):
                 await og_resp.edit(content='```Expired```',view=self)
 
     async def disable_all_buttons(self):
+        """ Deactivates button after one has been selected. """
         for butts in self.children:
             if isinstance(butts,Button):
                 butts.disabled = True
 
     async def attach_file(self,discord_file):
+        """ Attaches a file and clears all previous view items. """
         self.clear_items()
         og_resp = await self.interaction.original_response()
         await og_resp.edit(content='<Finished>', attachments=[discord_file],view=self)
 
 class ButtonEmbeddedLink(Button):
+    """
+    Class - ButtonEmbeddedLink - Creates Buttons that is related to the url in BookOption view.
+
+    Attributes:
+        cog : commands.Cog the cog extension associated with view
+        user_option : stores the url/link str associated with button/choice
+        parent_view : the view that is invoking the creation of buttons
+    """
     def __init__(
             self,
             cog : commands.Cog, 
@@ -60,41 +96,76 @@ class ButtonEmbeddedLink(Button):
         self.user_option = user_option
         self.parent_view = parent_view
     
-    async def cancel_pick(self,interaction: discord.Interaction, og_resp : discord.InteractionMessage):
-        self.parent_view.clear_items()
-        await og_resp.edit(content='```Canceled```',view=self.parent_view)
-        
     async def callback(self,interaction : discord.Interaction):
         #should fire off the book request
-        user_name = interaction.user.name
-        user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
+        user_name = sanitize_username(interaction.user.name)
+
         await interaction.response.defer()
         og_resp = await interaction.original_response()
-        ####
+
         await self.parent_view.disable_all_buttons()
-        if self.label == 'X' and self.user_option is None:
-            await self.cancel_pick(interaction,og_resp)
+
+        if self._is_cancel():
+            await self._handle_cancel(interaction,og_resp)
             return
+
         await og_resp.edit(content="<In Progress>",view=self.parent_view)
         
-        ###
-        req_url = self.cog.api + self.cog.api_routes['pick']
-        data = self.cog.json_payload(user=user_name,title=self.user_option)
+        pick_status = await self._handle_pick(user_name,interaction)
+
+        if pick_status is False:
+            self.parent_view.clear_items()
+            await og_resp.edit(content="Pick failed verify info.",view = self.parent_view)
+
+        return
+
+    def _is_cancel(self) -> bool:
+        """ Checks to see if its the cancel button """
+        expected_label = 'X' # change to liking 
+        return self.label == expected_label and self.user_option is None
+
+    async def _handle_cancel(self , interaction : discord.Interaction , original_response : discord.InteractionMessage):
+        """ Removes all buttons from view and updates message to show cancellation. """
+        self.parent_view.clear_items()
+        await original_response.edit(content='```Canceled```', view=self.parent_view)
+    
+    async def _handle_pick(self,username : str , interaction : discord.Interaction ):
+        """ Process the pick-interaction executed by the user."""
+
+        request_url = self.cog.api + self.cog.api_routes['pick']
+        data = self.cog.json_payload(
+            user= username,
+            title= self.user_option
+            )
+        
         try:
-            async with self.cog.cog_api_session.post(url=req_url,json=data) as response:
+            async with self.cog.cog_api_session.post(url= request_url,json= data) as response:
                 job_status = await response.json()
-                to_be_attached , finished_file = discord_file_creation(user_name)
                 if response.status == 200 and job_status is not None:
-                    await self.parent_view.attach_file(to_be_attached)
-                    tag_file_finish(finished_file)
+                    discord_file_object , source_file = discord_file_creation(username)
+                    if discord_file_object is not None and source_file is not None:
+                        await self.parent_view.attach_file(discord_file_object)
+                        tag_file_finish(source_file)
+                        return True
+                    else:
+                        await interaction.followup.send("Pick failed to get file.")
                 else:
-                    await interaction.followup.send("Pick Failed.")
+                    await interaction.followup.send("Pick failed - server issue.")
         except Exception as e:
-            print(e)
-        ###
-
-
+            print(f'pick error - {e}')
+            return False
+        
 class Book(commands.Cog):
+    """
+    Class Book : our extension/cog - Does things I want it to do
+
+    Attributes: 
+        bot : instance of Bot that is loading cog
+        cog_api_session : clientsession() 1 shared session for cog instance 
+        api : address/url to API
+        api_routes : dict of routes 
+
+    """
     def __init__(self,bot):
         self.bot = bot
         self.user_sessions = {}
@@ -114,7 +185,7 @@ class Book(commands.Cog):
         finally:
             print('Book unloaded.')
             
-    def json_payload(self,*, user : str , title : str , author : str = ""):
+    def json_payload(self,*, user : str , title : str , author : str = "") -> dict:
         unknown_book = {
             'title' : title,
             'author' : author
@@ -127,13 +198,12 @@ class Book(commands.Cog):
         }
         return data
 
-    
+
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
-        user_name = interaction.user.name
-        #sanitize cause discord lets "." come in
-        user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name) #just do a remove
+        user_name = sanitize_username(interaction.user.name)
+
         await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
         original_message = await interaction.original_response()
         data = self.json_payload(user=user_name,title=title,author=author)
@@ -168,8 +238,8 @@ class Book(commands.Cog):
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
-        user_name = interaction.user.name
-        user_name = re.sub(r'[<>:"/\\|?*.]', '', user_name)
+        user_name = sanitize_username(interaction.user.name)
+        
 
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['find_hardmode']
@@ -211,7 +281,7 @@ class Book(commands.Cog):
     @app_commands.describe(what='what',who='who')
     async def direct_msg_request(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
-        user_name = re.sub(r'[<>:"/\\|?*.]', '', user.name)
+        user_name = sanitize_username(user.name)
         await user.send("Just hold your horses...")
         await interaction.response.send_message(f'{what} {who}',ephemeral=True)
         data = self.json_payload(user= user_name, title= what, author= who)
