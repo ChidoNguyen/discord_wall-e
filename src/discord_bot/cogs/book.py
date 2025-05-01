@@ -202,10 +202,11 @@ class Book(commands.Cog):
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
-        user_name = sanitize_username(interaction.user.name)
-
         await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
+
         original_message = await interaction.original_response()
+
+        user_name = sanitize_username(interaction.user.name)
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['find']
         try:
@@ -238,14 +239,13 @@ class Book(commands.Cog):
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
-        user_name = sanitize_username(interaction.user.name)
-        
+        await interaction.response.send_message("Working on it...")
 
+        original_message = await interaction.original_response()
+
+        user_name = sanitize_username(interaction.user.name)
         data = self.json_payload(user=user_name,title=title,author=author)
         req_url = self.api + self.api_routes['find_hardmode']
-
-        await interaction.response.send_message("Working on it...")
-        original_message = await interaction.original_response()
         try:
             async with self.cog_api_session.post(req_url, json=data) as response:
                 if response.status == 200:
