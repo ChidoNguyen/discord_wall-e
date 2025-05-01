@@ -2,12 +2,15 @@ import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
+from json import JSONDecodeError
 from ..utils import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
 
 from discord.ui import View, Button
 from src.discord_bot.pagination import PaginatorView 
 import aiohttp
 import os
+#callable flexibility ? #
+from typing import Callable , Awaitable
 class BookOptions(View):
     """
     Class : BookOptions -  Custom discord bot UI for handling interactions with search results.
@@ -33,6 +36,16 @@ class BookOptions(View):
         self.interaction = interaction
         self._add_buttons()
 
+    def generate_view_content(self):
+        try:
+            body='Review and pick:'
+            opts = [
+                f"{idx}. `Title<{data['title']}>` by `Author<{data['author']}>` [more info](<{data['link'].strip()}>)" for (idx,data) in enumerate(self.links,start=1)
+            ]
+            return '\n'.join([body,*opts])
+        except Exception as e:
+            print(e)
+        
     def _add_buttons(self):
         """ Creates a Button for each link , and a cancel button. """
         for idx,json_data in enumerate(self.links):
@@ -198,84 +211,85 @@ class Book(commands.Cog):
         }
         return data
 
+#######
+    
+    async def _find_handle(self,interaction : discord.Interaction, original_response : discord.InteractionMessage, username : str):
+        file_status = discord_file_creation(username=username)
+        if(
+            file_status is not None
+            and isinstance(file_status, tuple)
+            and len(file_status) == 2
+            and isinstance(file_status[0], discord.File)
+            and isinstance(file_status[1], str)
+        ):
+            discord_file , source_file_path = file_status
+            await original_response.edit(content=f"<Finished> {interaction.user.mention}",attachments=[discord_file])
+            tag_file_finish(source_file_path)
+            return True
+        return False
+    
+    async def _find_hardmode_handle(self, interaction : discord.Interaction ,original_message : discord.InteractionMessage, username : str):
+    #build the view to display search results + buttons
+        search_results = book_search_output(username)
 
+        if not search_results:
+            await original_message.edit("Nothing found.")
+            return False
+        
+        option_view = BookOptions(self,search_results,interaction)
+        option_view_content = option_view.generate_view_content()
+        await original_message.edit(content=option_view_content,view=option_view)
+        return True
+    
+    async def _book_cog_post_handle(
+            self,
+            interaction : discord.Interaction,
+            task_route : str,
+            data_payload : list,
+            book_command_handler : Callable[[discord.Interaction, discord.InteractionMessage,str],Awaitable[bool]],
+            root_url : str = None
+    ):
+        if root_url is None :
+            root_url = self.api
+        try:
+            username = sanitize_username(interaction.user.name)
+            original_response = await interaction.original_response()
+            request_url = root_url + task_route
+            data = self.json_payload(user=username,title = data_payload[0],author = data_payload[1])
+        except Exception as e:
+            print(e)
+        try:
+            async with self.cog_api_session.post(request_url,json=data) as response :
+                if response.status == 200:
+                    try:
+                        response_data = await response.json()
+                        if response_data is not None and await book_command_handler(interaction,original_response,username):
+                                return
+                        else:
+                            print('something')
+                    except JSONDecodeError:
+                        print(f'Error decoding response json - {task_route}')
+        except aiohttp.ClientError as e:
+            print(f"A client error occurred - {task_route}: {e}")
+        except Exception as e:
+            print(f"An unexpected error occured - {task_route}: {e}")
+        await original_response.edit(content=f"```Try again later... and I mean later later.```")
+        
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
-        await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
-
-        original_message = await interaction.original_response()
-
-        user_name = sanitize_username(interaction.user.name)
-        data = self.json_payload(user=user_name,title=title,author=author)
-        req_url = self.api + self.api_routes['find']
         try:
-            async with self.cog_api_session.post(req_url, json=data) as response:
-                if response.status == 200:
-                    try:
-                        job_status = await response.json()
-                        if job_status is not None:
-                            to_be_attached, finished_file = discord_file_creation(user_name)
-                            await original_message.edit(content=
-                                f'<Finished> {interaction.user.mention}',
-                                attachments=[to_be_attached]
-                                )
-                            tag_file_finish(finished_file)
-                            return
-                        else:
-                            print("find - Empty find response despite 200 response.")
-                            await interaction.followup.send('Issue finding requested item.',ephemeral=True)
-                    except Exception as e:
-                        print(f'find request -  Failed to parse JSON: {e}')
-                else:
-                    print(f'findbook non-200 response: {response.status}')
-        except aiohttp.ClientError as e:
-            print(f"A client error occurred: {e}")
+            await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
+            await self._book_cog_post_handle(interaction,task_route=self.api_routes['find'],data_payload=[title,author],book_command_handler=self._find_handle)
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-        # Update user message with error
-        await original_message.edit(content="```Error: /find```")
+            print(e)
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
         await interaction.response.send_message("Working on it...")
-
-        original_message = await interaction.original_response()
-
-        user_name = sanitize_username(interaction.user.name)
-        data = self.json_payload(user=user_name,title=title,author=author)
-        req_url = self.api + self.api_routes['find_hardmode']
-        try:
-            async with self.cog_api_session.post(req_url, json=data) as response:
-                if response.status == 200:
-                    try:
-                        job_status = await response.json()
-                        if job_status is not None:
-                            search_results = book_search_output(user_name)
-                            option_view = BookOptions(self,search_results,interaction)
-                            ##### want to edit original interaction ###
-                            options_text = "Review and pick:\n"
-                            for (idx,json_data) in enumerate(search_results,start = 1):
-                                #link/author/title in json data
-                                url = json_data['link']
-                                author = json_data['author']
-                                title = json_data['title']
-                                options_text += f"{idx}. `Title<{title}>` `Author<{author}> ` [more info](<{url.strip()}>) \n"
-                            await original_message.edit(content=options_text, view=option_view)
-                            return
-                        else:
-                            print("find_hardmode : Empty job_status despite 200 response")
-                            await interaction.followup.send("No valid results were found." , ephemeral=True)
-                    except Exception as e:
-                        print(f'find_hardmode - failed to parse JSON: {e}')
-                else:
-                    print(f'find_hardmode - received non 200 response : {response.status}')
-        except aiohttp.ClientError as e:
-            print(f"A client error occurred: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-        await original_message.edit(content="```Error: /find_hardmode```")
+        await self._book_cog_post_handle(interaction,task_route=self.api_routes['find_hardmode'],data_payload=[title,author],book_command_handler=self._find_hardmode_handle)
+       
     
     @app_commands.command(name="whisper_it_to_me" , description="ill dm you secrets")
     @app_commands.describe(what='what',who='who')

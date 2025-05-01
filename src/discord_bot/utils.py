@@ -46,7 +46,7 @@ def discord_file_creation(username : str):
         print(f'discord file creation failed - {e}')
         return None , None
 
-def book_search_output(username:str):
+def book_search_output(username:str) -> dict:
     user_folder = os.path.join(Download_dir,username)
     #output.txt has results
     search_result = "results.json"

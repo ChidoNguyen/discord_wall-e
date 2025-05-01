@@ -405,6 +405,7 @@ discordCreds.*
 myvenv
 *pycache*
 *tmp.*
+*tmp_draft.*
 *bot_cookies*
 *.DS_Store*
 *.ini*
