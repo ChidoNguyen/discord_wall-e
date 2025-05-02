@@ -19,6 +19,7 @@ async def home():
     print("Homepage")
     return {"message" : "homepage"}
 
+@router.post("/whisperfind")
 @router.post("/find")
 async def find(unknown_book : UnknownBook, user_details : UserDetails, background_tasks : BackgroundTasks):
     #print("looking")

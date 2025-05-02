@@ -10,7 +10,7 @@ from src.discord_bot.pagination import PaginatorView
 import aiohttp
 import os
 #callable flexibility ? #
-from typing import Callable , Awaitable
+from typing import Callable , Awaitable , Optional , Union
 class BookOptions(View):
     """
     Class : BookOptions -  Custom discord bot UI for handling interactions with search results.
@@ -25,7 +25,7 @@ class BookOptions(View):
 
     """
     def __init__(self, 
-                 cog : commands.Cog, 
+                 cog : Union["Book",commands.Cog], #commands.Cog, 
                  links: list, 
                  interaction : discord.Interaction,
                  timeout=120
@@ -98,7 +98,7 @@ class ButtonEmbeddedLink(Button):
     """
     def __init__(
             self,
-            cog : commands.Cog, 
+            cog : Union["Book" , commands.Cog], 
             label : str , 
             user_option : str ,  
             parent_view : BookOptions,
@@ -110,8 +110,6 @@ class ButtonEmbeddedLink(Button):
         self.parent_view = parent_view
     
     async def callback(self,interaction : discord.Interaction):
-        #should fire off the book request
-        user_name = sanitize_username(interaction.user.name)
 
         await interaction.response.defer()
         og_resp = await interaction.original_response()
@@ -124,12 +122,10 @@ class ButtonEmbeddedLink(Button):
 
         await og_resp.edit(content="<In Progress>",view=self.parent_view)
         
-        pick_status = await self._handle_pick(user_name,interaction)
-
-        if pick_status is False:
+        pick_status = await self.cog._book_cog_post_handle(interaction,self.cog.api_routes['pick'],data_payload=[self.user_option,""],book_command_handler=self._handle_pick)
+        if not pick_status:
             self.parent_view.clear_items()
             await og_resp.edit(content="Pick failed verify info.",view = self.parent_view)
-
         return
 
     def _is_cancel(self) -> bool:
@@ -142,32 +138,15 @@ class ButtonEmbeddedLink(Button):
         self.parent_view.clear_items()
         await original_response.edit(content='```Canceled```', view=self.parent_view)
     
-    async def _handle_pick(self,username : str , interaction : discord.Interaction ):
-        """ Process the pick-interaction executed by the user."""
-
-        request_url = self.cog.api + self.cog.api_routes['pick']
-        data = self.cog.json_payload(
-            user= username,
-            title= self.user_option
-            )
-        
-        try:
-            async with self.cog.cog_api_session.post(url= request_url,json= data) as response:
-                job_status = await response.json()
-                if response.status == 200 and job_status is not None:
-                    discord_file_object , source_file = discord_file_creation(username)
-                    if discord_file_object is not None and source_file is not None:
-                        await self.parent_view.attach_file(discord_file_object)
-                        tag_file_finish(source_file)
-                        return True
-                    else:
-                        await interaction.followup.send("Pick failed to get file.")
-                else:
-                    await interaction.followup.send("Pick failed - server issue.")
-        except Exception as e:
-            print(f'pick error - {e}')
-            return False
-        
+    async def _handle_pick(self,*,interaction : discord.Interaction = None, original_response : discord.InteractionMessage = None, username : str) -> bool:
+        file_status = discord_file_creation(username)
+        if self.cog._verify_discord_file(file_status):
+            discord_file , source_file_path = file_status
+            await self.parent_view.attach_file(discord_file)
+            tag_file_finish(source_file_path)
+            return True
+        return False
+         
 class Book(commands.Cog):
     """
     Class Book : our extension/cog - Does things I want it to do
@@ -187,7 +166,9 @@ class Book(commands.Cog):
         self.api_routes = {
             'find' : '/find',
             'find_hardmode' : '/find_hardmode',
-            'pick' : '/pick'
+            'pick' : '/pick',
+            'catalog' : '/catalog',
+            'dm' : '/whisperfind'
         }
 
     async def cog_unload(self):
@@ -197,8 +178,9 @@ class Book(commands.Cog):
             print(f'Failed to close out client session for book extension - {e}')
         finally:
             print('Book unloaded.')
-            
-    def json_payload(self,*, user : str , title : str , author : str = "") -> dict:
+    
+    @staticmethod
+    def json_payload(*, user : str , title : str , author : str = "") -> dict:
         unknown_book = {
             'title' : title,
             'author' : author
@@ -212,35 +194,75 @@ class Book(commands.Cog):
         return data
 
 #######
-    
-    async def _find_handle(self,interaction : discord.Interaction, original_response : discord.InteractionMessage, username : str):
-        file_status = discord_file_creation(username=username)
-        if(
-            file_status is not None
-            and isinstance(file_status, tuple)
-            and len(file_status) == 2
-            and isinstance(file_status[0], discord.File)
-            and isinstance(file_status[1], str)
+    @staticmethod
+    def _verify_discord_file(results : tuple) -> bool:
+        """ 
+            Verifies the return values of _discord_file_creation()
+            Expect a two value tuple - (a,b):
+                a - expected to be discord.File object
+                b - file path to the source file (str)
+        """
+        if (
+            results is not None
+            and isinstance(results,tuple)
+            and len(results) == 2
+            and isinstance(results[0],discord.File)
+            and isinstance(results[1], str)
         ):
+            return True
+        return False
+    
+    """
+    Cog Specific Callable Handler:
+        REQUIRES 3 Arguments - interaction (discord.Interaction)
+                             - original_response (disocrd.InteractionMessage)
+                             - username (str and sanitized)
+        RETURNS BOOL
+    """
+    async def _find_handle(self, * , interaction : discord.Interaction, original_response : discord.InteractionMessage, username : str) -> bool:
+        file_status = discord_file_creation(username=username)
+        if self._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
             await original_response.edit(content=f"<Finished> {interaction.user.mention}",attachments=[discord_file])
             tag_file_finish(source_file_path)
             return True
         return False
     
-    async def _find_hardmode_handle(self, interaction : discord.Interaction ,original_message : discord.InteractionMessage, username : str):
+    async def _find_hardmode_handle(self, * , interaction : discord.Interaction ,original_response : discord.InteractionMessage, username : str) -> bool:
     #build the view to display search results + buttons
         search_results = book_search_output(username)
 
         if not search_results:
-            await original_message.edit("Nothing found.")
+            await original_response.edit("Nothing found.")
             return False
         
         option_view = BookOptions(self,search_results,interaction)
         option_view_content = option_view.generate_view_content()
-        await original_message.edit(content=option_view_content,view=option_view)
+        await original_response.edit(content=option_view_content,view=option_view)
         return True
     
+    async def _dm_request_handle(self, * ,interaction : discord.Interaction, original_response : Optional[discord.InteractionMessage] = None , username : str) -> bool:
+        dm_user = interaction.user
+        file_status = discord_file_creation(username)
+        if self._verify_discord_file(file_status):
+            discord_file , source_file_path = file_status
+            await dm_user.send("Is this what you wanted? Too bad if it isn't.", file = discord_file)
+            tag_file_finish(source_file_path)
+            return True
+        return False
+
+    async def _catalog_handle(self, interaction : discord.Interaction, data : dict) ->bool:
+        try:
+            data = data['catalog'] # key/value specific to our needs
+            catalog = PaginatorView(data,interaction) #parent view obj
+            embeds = catalog.create_catalog_embed() #create first home view
+            await interaction.followup.send(embed=embeds,view=catalog)
+            return True
+        except Exception as e:
+            print(f"Catalog init error - {e}")
+            return False
+
+
     async def _book_cog_post_handle(
             self,
             interaction : discord.Interaction,
@@ -248,7 +270,7 @@ class Book(commands.Cog):
             data_payload : list,
             book_command_handler : Callable[[discord.Interaction, discord.InteractionMessage,str],Awaitable[bool]],
             root_url : str = None
-    ):
+    ) -> bool:
         if root_url is None :
             root_url = self.api
         try:
@@ -263,8 +285,8 @@ class Book(commands.Cog):
                 if response.status == 200:
                     try:
                         response_data = await response.json()
-                        if response_data is not None and await book_command_handler(interaction,original_response,username):
-                                return
+                        if response_data is not None and await book_command_handler(interaction=interaction,original_response=original_response,username=username):
+                                return True
                         else:
                             print('something')
                     except JSONDecodeError:
@@ -274,7 +296,28 @@ class Book(commands.Cog):
         except Exception as e:
             print(f"An unexpected error occured - {task_route}: {e}")
         await original_response.edit(content=f"```Try again later... and I mean later later.```")
-        
+        return False
+
+    async def _book_cog_get_handle(
+            self,
+            interaction : discord.Interaction,
+            task_route : str,
+            book_command_handler : Callable[...,Awaitable[bool]],
+            root_url : str = None
+    ) -> bool:
+        if not root_url:
+            root_url = self.api
+        request_url = root_url + task_route
+        try:
+            async with self.cog_api_session.get(url=request_url) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    if response_data is not None and await book_command_handler(interaction,response_data):
+                        return True
+        except Exception as e:
+            print(f" task route : {task_route} error - {e}")
+        return False
+
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
@@ -295,49 +338,19 @@ class Book(commands.Cog):
     @app_commands.describe(what='what',who='who')
     async def direct_msg_request(self,interaction : discord.Interaction , what : str , who : str):
         user = interaction.user
-        user_name = sanitize_username(user.name)
         await user.send("Just hold your horses...")
         await interaction.response.send_message(f'{what} {who}',ephemeral=True)
-        data = self.json_payload(user= user_name, title= what, author= who)
-        url = self.api + self.api_routes['find']
-        try:
-            async with self.cog_api_session.post(url,json=data) as response:
-                if response.status == 200:
-                    try:
-                        resp_status = await response.json()
-                        if resp_status is not None:
-                            to_be_attached , finished_file = discord_file_creation(user_name)
-                            await user.send("You wanted..." , file=to_be_attached)
-                            tag_file_finish(finished_file)
-                            return
-                        else:
-                            print("Empty job_status despite 200 response.")
-                    except Exception as e:
-                        print(f'whisper_in_my_ear - failed to parse JSON: {e}')
-                else:
-                    print(f'whisper_in_my_ear received non 200 response : {response.status}')
-        except aiohttp.ClientError as e:
-            print(f"A client error occurred: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-        await user.send("Something went wrong sorry dude.")
+        status = await self._book_cog_post_handle(interaction,task_route=self.api_routes['dm'],data_payload=[what,who],book_command_handler = self._dm_request_handle)
+        
+        if not status : 
+            await user.send("Something went wrong sorry dude.")
 
     @app_commands.command(name="catalog", description="do you lick your finger before you turn the page?")
     async def catalog(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        url = self.api + '/catalog'
-        try:
-            async with self.cog_api_session.get(url=url) as response:
-                if response.status == 200:
-                    response_data = await response.json()
-                    if response_data is not None:
-                        #reponse data list[list[str]]
-                        page_view = PaginatorView(response_data['catalog'],interaction)
-                        embeds = page_view.create_catalog_embed()
-                        await interaction.followup.send(embed=embeds,view=page_view)
-        except Exception as e:
-            print(f'pagination of catalog error - {e}')
-        return
+        if not await self._book_cog_get_handle(interaction=interaction,task_route=self.api_routes['catalog'],book_command_handler=self._catalog_handle):
+            await interaction.followup.send("Catalog got burnt.")
+        
 
 async def setup(bot):
     await bot.add_cog(Book(bot))
