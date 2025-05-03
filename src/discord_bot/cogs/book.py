@@ -1,14 +1,17 @@
+import aiohttp
+
 import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
+from discord.ui import View, Button
+from src.discord_bot.pagination import PaginatorView 
+
 from json import JSONDecodeError
 from ..utils import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
 
-from discord.ui import View, Button
-from src.discord_bot.pagination import PaginatorView 
-import aiohttp
-import os
+from src.env_config import config
+
 #callable flexibility ? #
 from typing import Callable , Awaitable , Optional , Union
 class BookOptions(View):
@@ -28,6 +31,7 @@ class BookOptions(View):
                  cog : Union["Book",commands.Cog], #commands.Cog, 
                  links: list, 
                  interaction : discord.Interaction,
+                 *,
                  timeout=120
                  ):
         super().__init__(timeout=timeout)
@@ -113,13 +117,14 @@ class ButtonEmbeddedLink(Button):
 
         await interaction.response.defer()
         og_resp = await interaction.original_response()
-
+        #prevents doing too many things at once
         await self.parent_view.disable_all_buttons()
 
+        #cancels
         if self._is_cancel():
             await self._handle_cancel(interaction,og_resp)
             return
-
+        #everything else
         await og_resp.edit(content="<In Progress>",view=self.parent_view)
         
         pick_status = await self.cog._book_cog_post_handle(interaction,self.cog.api_routes['pick'],data_payload=[self.user_option,""],book_command_handler=self._handle_pick)
@@ -162,7 +167,7 @@ class Book(commands.Cog):
         self.bot = bot
         self.user_sessions = {}
         self.cog_api_session = aiohttp.ClientSession()
-        self.api = os.getenv("API_ENDPOINT")
+        self.api = config.API_ENDPOINT
         self.api_routes = {
             'find' : '/find',
             'find_hardmode' : '/find_hardmode',

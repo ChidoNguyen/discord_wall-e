@@ -1,16 +1,12 @@
-import discord
 import os
-
+import discord
 from discord.ext import commands
 from discord import app_commands
-from dotenv import load_dotenv
 from discord.app_commands import CheckFailure
+from src.env_config import config
 
-load_dotenv()
-DiscordToken = os.getenv("DISCORD_TOKEN")
-Admin_ID = int(os.getenv("ADMIN_ID"))
-Janitors = int(os.getenv("JANITORS"))
-Personal_Test = int(os.getenv("PERSONAL_TEST"))
+
+
 ###Bot Persmissions###
 intents = discord.Intents.default()
 intents.message_content = True
@@ -20,7 +16,7 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix='!',intents=intents)
 async def admin_check(interaction : discord.Interaction):
-    return interaction.user.id == Admin_ID
+    return interaction.user.id == config.ADMIN_ID
 async def load_cogs():
     await bot.load_extension("src.discord_bot.cogs.book")
     await bot.load_extension("src.discord_bot.cogs.help")
@@ -68,7 +64,7 @@ async def unauthorized_error(interaction : discord.Interaction, error):
 async def main():
     async with bot:
         await load_cogs()
-        await bot.start(DiscordToken)
+        await bot.start(config.DISCORD_TOKEN)
 
 if __name__ == '__main__':
     import asyncio

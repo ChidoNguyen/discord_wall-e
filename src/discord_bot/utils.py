@@ -3,11 +3,9 @@ import discord
 import json
 import shutil
 import re
-from dotenv import load_dotenv
+from src.env_config import config
 
-#env vars#
-load_dotenv()
-Download_dir = os.getenv('DOWNLOAD_DIR')
+DOWNLOAD_DIR = config.DOWNLOAD_DIR
 
 def sanitize_username(username : str):
     """ removes forbidden special chars from being used in file/folder or OS related naming """
@@ -21,7 +19,7 @@ def discord_file_creation(username : str):
 
     #obtain newest file in folder#
     try:
-        user_folder = os.path.join(Download_dir,username)
+        user_folder = os.path.join(DOWNLOAD_DIR,username)
         target_file = None
         target_file_ctime = 0
         discord_file_name = None
@@ -47,7 +45,7 @@ def discord_file_creation(username : str):
         return None , None
 
 def book_search_output(username:str) -> dict:
-    user_folder = os.path.join(Download_dir,username)
+    user_folder = os.path.join(DOWNLOAD_DIR,username)
     #output.txt has results
     search_result = "results.json"
     with open(os.path.join(user_folder,search_result) , 'r') as json_file:

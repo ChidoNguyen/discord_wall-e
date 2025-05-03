@@ -4,9 +4,9 @@ from discord.ui import View, Button
 import random
 import os
 from src.fastAPI.catalog_cache import FileInfo , CacheResult
-from dotenv import load_dotenv
-load_dotenv()
-THE_VAULT = os.getenv('THE_VAULT')
+
+from src.env_config import config
+THE_VAULT = config.THE_VAULT
 
 class PaginatorView(View):
     """
