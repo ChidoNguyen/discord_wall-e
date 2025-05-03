@@ -1,4 +1,3 @@
-import asyncio 
 import sys
 import json
 import os
@@ -7,13 +6,13 @@ import sqlite3
 import time
 from src.automation.book_bot import direct_bot
 from src.fastAPI.catalog_cache import get_cache_data
-from dotenv import load_dotenv
-#from src.automation.book_bot import book_bot
-load_dotenv()
-THE_VAULT = os.getenv('THE_VAULT')
-DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
-THE_JOBS = os.getenv('THE_JOBS')
-DB_PATH = os.getenv('DB_PATH')
+
+from src.env_config import config
+
+THE_VAULT = config.THE_VAULT
+DOWNLOAD_DIR = config.DOWNLOAD_DIR
+THE_JOBS = config.THE_JOBS
+DB_PATH =config.DB_PATH
 ### DO NOT RUN WITH RELOAD ####
 system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
 '''

@@ -14,6 +14,7 @@ from src.env_config import config
 
 #callable flexibility ? #
 from typing import Callable , Awaitable , Optional , Union
+
 class BookOptions(View):
     """
     Class : BookOptions -  Custom discord bot UI for handling interactions with search results.

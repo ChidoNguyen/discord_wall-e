@@ -6,7 +6,7 @@ import os
 from src.fastAPI.catalog_cache import FileInfo , CacheResult
 
 from src.env_config import config
-THE_VAULT = config.THE_VAULT
+#THE_VAULT = config.THE_VAULT
 
 class PaginatorView(View):
     """
@@ -146,7 +146,7 @@ class PaginatorView(View):
 
                 selected_id = interaction.data['values'][0]
                 option = self.id_lookup(selected_id)
-                selected_file = os.path.join(os.path.join(THE_VAULT,'the_goods'),option.filename)
+                selected_file = os.path.join(os.path.join(config.THE_VAULT,'the_goods'),option.filename)
 
                 if os.path.exists(selected_file):
                     with open(selected_file,'rb') as file:

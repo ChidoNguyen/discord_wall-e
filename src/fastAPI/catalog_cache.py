@@ -2,7 +2,9 @@ import os
 import json
 from dataclasses import dataclass ,fields , asdict
 from typing import Mapping
-from src.env_config import THE_VAULT , DB_PATH
+from src.env_config import config
+THE_VAULT = config.THE_VAULT
+DB_PATH = config.DB_PATH
 ########
 cache_data_filename = 'cache_info.json'
 cache_folder = os.path.join(THE_VAULT,'cache') #os env later
