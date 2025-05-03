@@ -1,6 +1,7 @@
 import os
 import json
-from dataclasses import dataclass , asdict
+from dataclasses import dataclass ,fields , asdict
+from typing import Mapping
 from src.env_config import THE_VAULT , DB_PATH
 ########
 cache_data_filename = 'cache_info.json'
@@ -26,9 +27,13 @@ class FileInfo:
     
 @dataclass
 class CacheResult:
-    id_map : dict[int,FileInfo]
+    id_map : Mapping[int,FileInfo]
+    #id_map : dict[int,FileInfo]
     id_list: list[int]
 
+    def __iter__(self):
+        return iter(getattr(self,field.name) for field in fields(self))
+    
 def retrieve_db_info():
     import sqlite3
     con = sqlite3.connect(DB_PATH)

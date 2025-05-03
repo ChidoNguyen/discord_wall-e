@@ -43,7 +43,22 @@ async def on_ready():
 async def kill_bot(interaction : discord.Interaction):
     await interaction.response.send_message('# BOT IS OFFLINE')
     await bot.close()
+
+
+@bot.tree.command(name="refresh",description="debug")
+@app_commands.default_permissions(administrator=True)
+@app_commands.check(admin_check)
+async def refresh_bot(interaction : discord.Interaction):
+    target_cog = "src.discord_bot.cogs.book"
+    try:
+        await interaction.response.send_message("reloading", ephemeral=True, delete_after=10)
+        await bot.reload_extension(target_cog)
+        print(f"Reloaded - {target_cog}")
+    except Exception as e:
+        print(f"Reload failed - {e}")
+
 @kill_bot.error
+@refresh_bot.error
 async def unauthorized_error(interaction : discord.Interaction, error):
     if isinstance(error , CheckFailure):
         await interaction.response.send_message("You have no power here." , ephemeral=True , delete_after=15)
