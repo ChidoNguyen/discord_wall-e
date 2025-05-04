@@ -1,5 +1,4 @@
 import aiohttp
-
 import discord
 import discord.interactions
 from discord.ext import commands

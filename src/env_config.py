@@ -14,6 +14,7 @@ class Config:
             self.THE_VAULT = os.getenv('THE_VAULT')
             self.THE_JOBS = os.getenv('THE_JOBS')
             self.API_ENDPOINT = os.getenv('API_ENDPOINT')
+            self.THE_GOODS = os.getenv('THE_GOODS')
         except Exception as e:
             print(e)
 
