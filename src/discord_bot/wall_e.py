@@ -1,8 +1,5 @@
-import os
 import discord
 from discord.ext import commands
-from discord import app_commands
-from discord.app_commands import CheckFailure
 from src.env_config import config
 
 
@@ -20,7 +17,7 @@ async def admin_check(interaction : discord.Interaction):
 async def load_cogs():
     await bot.load_extension("src.discord_bot.cogs.book")
     await bot.load_extension("src.discord_bot.cogs.help")
-
+    await bot.load_extension("src.discord_bot.cogs.admin")
 
 @bot.event
 async def on_ready():
@@ -28,34 +25,6 @@ async def on_ready():
         print(f'Logged in as {bot.user} in {guild.name}')
     await bot.tree.sync()
     print("Current loaded cogs: ",list(bot.cogs.keys()))
-
-@bot.tree.command(name="killswitch",description = "fail safe")
-@app_commands.default_permissions(administrator=True)
-@app_commands.check(admin_check)
-async def kill_bot(interaction : discord.Interaction):
-    await interaction.response.send_message('# BOT IS OFFLINE')
-    await bot.close()
-
-
-@bot.tree.command(name="refresh",description="debug")
-@app_commands.default_permissions(administrator=True)
-@app_commands.check(admin_check)
-async def refresh_bot(interaction : discord.Interaction):
-    target_cog = "src.discord_bot.cogs.book"
-    try:
-        await interaction.response.send_message("reloading", ephemeral=True, delete_after=10)
-        await bot.reload_extension(target_cog)
-        print(f"Reloaded - {target_cog}")
-    except Exception as e:
-        print(f"Reload failed - {e}")
-
-@kill_bot.error
-@refresh_bot.error
-async def unauthorized_error(interaction : discord.Interaction, error):
-    if isinstance(error , CheckFailure):
-        await interaction.response.send_message("You have no power here." , ephemeral=True , delete_after=15)
-    else:
-        await interaction.response.send_message("Something is extra broken...")
 
 async def main():
     async with bot:

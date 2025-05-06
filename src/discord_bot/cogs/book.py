@@ -166,7 +166,8 @@ class Book(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
         self.user_sessions = {}
-        self.cog_api_session = aiohttp.ClientSession()
+        self.cog_api_session = aiohttp.ClientSession(),
+        self.active_view : set[discord.ui.View] = set()
         self.api = config.API_ENDPOINT
         self.api_routes = {
             'find' : '/find',
@@ -179,11 +180,18 @@ class Book(commands.Cog):
     async def cog_unload(self):
         try:
             await self.cog_api_session.close()
+            for items in self.active_view:
+                try:
+                    items.close()
+                except:
+                    print("rip")
+
         except Exception as e:
             print(f'Failed to close out client session for book extension - {e}')
         finally:
             print('Book unloaded.')
     
+
     @staticmethod
     def json_payload(*, user : str , title : str , author : str = "") -> dict:
         unknown_book = {
@@ -260,6 +268,8 @@ class Book(commands.Cog):
         try:
             data = data['catalog'] # key/value specific to our needs
             catalog = PaginatorView(data,interaction) #parent view obj
+            #### REGISTER VIEW?
+            self.active_view.add(catalog)
             embeds = catalog.create_catalog_embed() #create first home view
             await interaction.followup.send(embed=embeds,view=catalog)
             return True
