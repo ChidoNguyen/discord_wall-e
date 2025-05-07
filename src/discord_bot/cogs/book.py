@@ -1,18 +1,18 @@
 import aiohttp
+
 import discord
 import discord.interactions
 from discord.ext import commands
 from discord import app_commands
 from discord.ui import View, Button
-from src.discord_bot.pagination import PaginatorView 
+
+from typing import Callable , Awaitable , Optional , Union
 
 from json import JSONDecodeError
 from ..utils import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
+from src.discord_bot.pagination import PaginatorView 
 
 from src.env_config import config
-
-#callable flexibility ? #
-from typing import Callable , Awaitable , Optional , Union
 
 class BookOptions(View):
     """
@@ -166,8 +166,8 @@ class Book(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
         self.user_sessions = {}
-        self.cog_api_session = aiohttp.ClientSession(),
-        self.active_view : set[discord.ui.View] = set()
+        self.active_view : set[tuple[discord.ui.View, discord.Interaction]] = set() 
+        self.cog_api_session = aiohttp.ClientSession()
         self.api = config.API_ENDPOINT
         self.api_routes = {
             'find' : '/find',
@@ -180,16 +180,12 @@ class Book(commands.Cog):
     async def cog_unload(self):
         try:
             await self.cog_api_session.close()
-            for items in self.active_view:
-                try:
-                    items.close()
-                except:
-                    print("rip")
-
+            for (view,interaction) in self.active_view:
+                view.stop()
+                await interaction.delete_original_response()
+                #await (await interact.original_response()).edit(content='X',view=None,embed=None)
         except Exception as e:
             print(f'Failed to close out client session for book extension - {e}')
-        finally:
-            print('Book unloaded.')
     
 
     @staticmethod
@@ -269,7 +265,7 @@ class Book(commands.Cog):
             data = data['catalog'] # key/value specific to our needs
             catalog = PaginatorView(data,interaction) #parent view obj
             #### REGISTER VIEW?
-            self.active_view.add(catalog)
+            self.active_view.add((catalog,interaction))
             embeds = catalog.create_catalog_embed() #create first home view
             await interaction.followup.send(embed=embeds,view=catalog)
             return True
@@ -294,7 +290,7 @@ class Book(commands.Cog):
             request_url = root_url + task_route
             data = self.json_payload(user=username,title = data_payload[0],author = data_payload[1])
         except Exception as e:
-            print(e)
+            print(f'before post - {e}')
         try:
             async with self.cog_api_session.post(request_url,json=data) as response :
                 if response.status == 200:

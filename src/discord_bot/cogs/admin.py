@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from discord.app_commands import CheckFailure
+from discord.ext.commands import ExtensionNotLoaded , ExtensionNotFound
 from src.env_config import config
 
 class AdminPanel(commands.Cog):
@@ -27,13 +28,30 @@ class AdminPanel(commands.Cog):
         await self.bot.close()
 
     @app_commands.default_permissions(administrator=True)
+    @app_commands.command(name='kill_book', description='burn the book')
+    @is_admin()
+    async def kill_book(self,interaction: discord.Interaction):
+        target_cog = "src.discord_bot.cogs.book"
+        await interaction.response.defer(ephemeral=True)
+        if target_cog in self.bot.extensions:
+            await self.bot.unload_extension(target_cog)
+            await (await interaction.original_response()).edit(content="Unloaded Extension - Book",delete_after=15)
+        else:
+            print('Admin panel unload error.')
+        
+
+    @app_commands.default_permissions(administrator=True)
     @app_commands.command(name='refresh_bookie',description="Just dont touch it")
     @is_admin()
     async def refresh_book_cog(self,interaction: discord.Interaction):
         target_cog = "src.discord_bot.cogs.book"
         await interaction.response.send_message("Refreshing...",ephemeral=True, delete_after=15)
         try:
-            await self.bot.reload_extension(target_cog)
+            if target_cog in self.bot.extensions:
+                await self.bot.reload_extension(target_cog)
+            else:
+                await self.bot.load_extension(target_cog)
+            await interaction.edit_original_response(content="Reloaded")
         except Exception as e:
             print(f"reload error - {e}")
             
