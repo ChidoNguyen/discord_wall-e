@@ -52,8 +52,8 @@ def _get_search_result(bot_webdriver):
     }
     search_results= bot_webdriver.find_elements(By.CLASS_NAME, "book-item") #grab all search results
     #truncate our results to 10 results max
-    if len(search_results) > MAX_RESULTS:
-        search_results = search_results[:MAX_RESULTS]
+    #if len(search_results) > MAX_RESULTS:
+     #   search_results = search_results[:MAX_RESULTS]
     valid_links = []
     try:
         for items in search_results:
@@ -68,7 +68,7 @@ def _get_search_result(bot_webdriver):
         #print(f'Error: {e} \nBook search link extraction failed.')
         return None
     
-    return bot_webdriver , valid_links
+    return bot_webdriver , valid_links[:MAX_RESULTS]
 
 
 def bot_search(bot_webdriver, search_query):

@@ -298,8 +298,6 @@ class Book(commands.Cog):
                         response_data = await response.json()
                         if response_data is not None and await book_command_handler(interaction=interaction,original_response=original_response,username=username):
                                 return True
-                        else:
-                            print('something')
                     except JSONDecodeError:
                         print(f'Error decoding response json - {task_route}')
         except aiohttp.ClientError as e:
