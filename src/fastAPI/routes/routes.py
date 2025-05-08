@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter , BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict , Any , Union
@@ -25,17 +26,9 @@ async def find(unknown_book : UnknownBook, user_details : UserDetails, backgroun
     #print("looking")
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
+    #novel = await asyncio.to_thread(find_service,book_info,user_info)
     novel = await find_service(book_info,user_info)
-    #print(novel)
-    '''
-    Novel should be full JSON output could probably parse out meta data in "services" but for now skeleton it here
-    '''
-    ###
-    # _ , _ values are steps and misc for debugging if needed
-    #req_status , job_json_data , message , _ , _ = novel.values()
-    #req_message , req_data = novel.values()
-    #can narrow down check on novel for extra check but services already check that status is success
-    ###
+
     if novel is not None:
         req_message , req_data = novel.values()
         background_tasks.add_task(cron_fake,req_data)

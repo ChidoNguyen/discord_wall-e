@@ -142,13 +142,14 @@ class ButtonEmbeddedLink(Button):
         """ Removes all buttons from view and updates message to show cancellation. """
         self.parent_view.clear_items()
         await original_response.edit(content='```Canceled```', view=self.parent_view)
+        self.parent_view.stop() # maybe?
     
     async def _handle_pick(self,*,interaction : discord.Interaction = None, original_response : discord.InteractionMessage = None, username : str) -> bool:
-        file_status = discord_file_creation(username)
+        file_status = await discord_file_creation(username)
         if self.cog._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
             await self.parent_view.attach_file(discord_file)
-            tag_file_finish(source_file_path)
+            await tag_file_finish(source_file_path)
             return True
         return False
          
@@ -182,7 +183,10 @@ class Book(commands.Cog):
             await self.cog_api_session.close()
             for (view,interaction) in self.active_view:
                 view.stop()
-                await interaction.delete_original_response()
+                if isinstance(view,PaginatorView):
+                    await interaction.delete_original_response()
+                else:
+                    await interaction.edit_original_response(content='-',view=None)
                 #await (await interact.original_response()).edit(content='X',view=None,embed=None)
         except Exception as e:
             print(f'Failed to close out client session for book extension - {e}')
@@ -229,17 +233,17 @@ class Book(commands.Cog):
         RETURNS BOOL
     """
     async def _find_handle(self, * , interaction : discord.Interaction, original_response : discord.InteractionMessage, username : str) -> bool:
-        file_status = discord_file_creation(username=username)
+        file_status = await discord_file_creation(username=username)
         if self._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
             await original_response.edit(content=f"<Finished> {interaction.user.mention}",attachments=[discord_file])
-            tag_file_finish(source_file_path)
+            await tag_file_finish(source_file_path)
             return True
         return False
     
     async def _find_hardmode_handle(self, * , interaction : discord.Interaction ,original_response : discord.InteractionMessage, username : str) -> bool:
     #build the view to display search results + buttons
-        search_results = book_search_output(username)
+        search_results = await book_search_output(username)
 
         if not search_results:
             await original_response.edit("Nothing found.")
@@ -247,16 +251,17 @@ class Book(commands.Cog):
         
         option_view = BookOptions(self,search_results,interaction)
         option_view_content = option_view.generate_view_content()
+        self.active_view.add((option_view,interaction))
         await original_response.edit(content=option_view_content,view=option_view)
         return True
     
     async def _dm_request_handle(self, * ,interaction : discord.Interaction, original_response : Optional[discord.InteractionMessage] = None , username : str) -> bool:
         dm_user = interaction.user
-        file_status = discord_file_creation(username)
+        file_status = await discord_file_creation(username)
         if self._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
             await dm_user.send("Is this what you wanted? Too bad if it isn't.", file = discord_file)
-            tag_file_finish(source_file_path)
+            await tag_file_finish(source_file_path)
             return True
         return False
 

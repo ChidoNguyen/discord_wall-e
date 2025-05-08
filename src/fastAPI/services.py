@@ -4,15 +4,16 @@ import os
 import shutil
 import sqlite3
 import time
+import asyncio
 from src.automation.book_bot import direct_bot
 from src.fastAPI.catalog_cache import get_cache_data
 
 from src.env_config import config
-
 THE_VAULT = config.THE_VAULT
 DOWNLOAD_DIR = config.DOWNLOAD_DIR
 THE_JOBS = config.THE_JOBS
 DB_PATH =config.DB_PATH
+
 ### DO NOT RUN WITH RELOAD ####
 system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
 '''
@@ -29,7 +30,8 @@ async def find_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await direct_bot(user=user,search=search,option='getbook')
+    #kwargs = {'user':user, 'search':search,'option':'getbook'}
+    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook')))#await direct_bot(user=user,search=search,option='getbook')
 
     if script_results:
         try:
@@ -50,7 +52,7 @@ async def find_hardmode_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await direct_bot(user=user,search=search,option='getbook-adv')
+    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook-adv')))
 
     if script_results:
         try:
@@ -71,7 +73,7 @@ async def pick_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
 
-    script_results = await direct_bot(user=user,search=search,option='pick')
+    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='pick')))
 
     if script_results:
         try:

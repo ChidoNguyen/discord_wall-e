@@ -3,6 +3,8 @@ import discord.interactions
 from discord.ui import View, Button
 import random
 import os
+import io
+import asyncio
 from src.fastAPI.catalog_cache import FileInfo , CacheResult
 
 from src.env_config import config
@@ -133,32 +135,38 @@ class PaginatorView(View):
         )
         self.stop()
 
+    @staticmethod
+    def iobyte_read_file(filepath: str ) -> io.BytesIO:
+        ''' prevents io blocking behaviour '''
+        with open(filepath , 'rb') as file:
+            return io.BytesIO(file.read())
+        
     async def select_pick_callback(self, interaction: discord.Interaction):
             '''
             Custom Callback to handle when an option is chosen from dropdown menu.
 
             Option stores ID value relating to the choice. Function will retrieve FileInfo from id_map instance. 
             '''
-            import io
             try:
-                await interaction.response.send_message("🔎",ephemeral=True,delete_after=75)
-                og_response = await interaction.original_response()
+                #await interaction.response.send_message(f"🔎",ephemeral=True,delete_after=75)
+                #og_response = await interaction.original_response()
 
                 selected_id = interaction.data['values'][0]
                 option = self.id_lookup(selected_id)
+                
+                await interaction.response.send_message(f"🔎 {option.title}",ephemeral=True,delete_after=75)
+                og_response = await interaction.original_response()
+
                 selected_file = os.path.join(os.path.join(config.THE_VAULT,'the_goods'),option.filename)
 
                 if os.path.exists(selected_file):
-                    with open(selected_file,'rb') as file:
-                        file_bytes = io.BytesIO(file.read())
+                    file_bytes = await asyncio.to_thread(self.iobyte_read_file, selected_file)
                     file_bytes.seek(0)
                     attached_file = discord.File(fp=file_bytes,filename=option.filename)
                     await og_response.edit(content=f"✅ message and file attachment will self delete in 60s.{interaction.user.mention}",attachments=[attached_file])
             except Exception as e:
                 print(f'{e}')
                 await og_response.edit(content='Something went wrong.{interaction.user.mention}')
-
-
 
     def refresh_select_drop(self):
         ''' Updates drop down menu to reflect embed view. '''
