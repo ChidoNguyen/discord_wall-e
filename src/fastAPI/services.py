@@ -1,18 +1,21 @@
-import asyncio 
 import sys
 import json
 import os
 import shutil
 import sqlite3
 import time
+import asyncio
 from src.automation.book_bot import direct_bot
-from dotenv import load_dotenv
-#from src.automation.book_bot import book_bot
-load_dotenv()
-THE_VAULT = os.getenv('THE_VAULT')
-DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
-THE_JOBS = os.getenv('THE_JOBS')
-DB_PATH = os.getenv('DB_PATH')
+from src.fastAPI.catalog_cache import get_cache_data
+#
+from src.fastAPI.utility.threading_tools import coroutine_runner
+#
+from src.env_config import config
+THE_VAULT = config.THE_VAULT
+DOWNLOAD_DIR = config.DOWNLOAD_DIR
+THE_JOBS = config.THE_JOBS
+DB_PATH =config.DB_PATH
+
 ### DO NOT RUN WITH RELOAD ####
 system_specific = './myvenv/Scripts/python' if sys.platform == 'win32' else 'python'
 '''
@@ -29,7 +32,9 @@ async def find_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await direct_bot(user=user,search=search,option='getbook')
+    #kwargs = {'user':user, 'search':search,'option':'getbook'}
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook')))
+    script_results = await coroutine_runner(direct_bot,user=user,search=search,option='getbook')
 
     if script_results:
         try:
@@ -50,8 +55,8 @@ async def find_hardmode_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await direct_bot(user=user,search=search,option='getbook-adv')
-
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook-adv')))
+    script_results = await coroutine_runner(direct_bot,user=user,search=search,option='getbook-adv')
     if script_results:
         try:
             script_results_parse = json.loads(script_results)
@@ -71,7 +76,8 @@ async def pick_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
 
-    script_results = await direct_bot(user=user,search=search,option='pick')
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='pick')))
+    script_results = await coroutine_runner(direct_bot(user=user,search=search,option='pick'))
 
     if script_results:
         try:
@@ -86,12 +92,18 @@ async def pick_service(book_info : dict, user_info : dict):
             pass
     return None
   
+async def catalog_service():
+    await cron_fake(None)
+    return {'catalog' : get_cache_data()}
 
 async def _create_database_job(job_details):
     '''
     Params : Dictionary of info needed to do the job source path / author / title/ username
         source : str - full path to where the finished file is residing
-        author / title : str - used to format new file name during job
+        author : str
+        fname : str
+        lname : str
+        title : str 
         username : str - for catalog purposes
     Output : json job file will be created in env. defined directory 
     '''
@@ -120,24 +132,29 @@ async def to_the_vault(user):
         for files in os.listdir(userfolder):
             dir_files.append(os.path.join(userfolder,files))
         newest_file = max(dir_files,key=os.path.getctime)
-        shutil.move(newest_file,THE_VAULT)
+        shutil.move(newest_file,os.path.join(THE_VAULT,'the_goods'))
     finally:
         return
 async def _register_vault(job_details):
-    source,title,author,username = job_details.values()
+    #all are expected to be present direct access for error raising
+    source = job_details['source']
+    aut_fname = job_details['fname']
+    aut_lname = job_details['lname']
+    title = job_details['title']
+    username = job_details['username']
     #db#
     db_con = sqlite3.connect(DB_PATH)
     cursor = db_con.cursor()
-    sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author,user) VALUES (?,?,?)"
-    cursor.execute(sql_insert_ignore,(title,author,username))
+    sql_insert_ignore = "INSERT OR IGNORE INTO digital_brain (title,author_first_name,author_last_name,user) VALUES (?,?,?,?)"
+    cursor.execute(sql_insert_ignore,(title,aut_fname,aut_lname,username))
     #print(cursor.execute("SELECT * FROM digital_brain").fetchall())
     db_con.commit()
     db_con.close()
     ###
-
+    author = f'{aut_fname} {aut_lname}'.strip()
     if os.path.exists(source):
         try:
-            moved_path = shutil.move(source,os.path.join(THE_VAULT,f'{title} by {author}.epub'))
+            moved_path = shutil.move(source,os.path.join(os.path.join(THE_VAULT,'the_goods'),f'{title} by {author}.epub'))
             return True , moved_path
         except Exception as e:
             return False,f'Error shutil.move() - {e}'
@@ -146,7 +163,8 @@ async def _register_vault(job_details):
             
 
 async def cron_fake(job_details):
-    await _create_database_job(job_details)
+    if job_details is not None:
+        await _create_database_job(job_details)
     job_listings = [os.path.join(THE_JOBS,files) for files in os.listdir(THE_JOBS) if files.endswith('json')]
     for items in job_listings:
         with open(items, 'r') as f:
