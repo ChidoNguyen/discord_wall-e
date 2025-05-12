@@ -7,7 +7,9 @@ import time
 import asyncio
 from src.automation.book_bot import direct_bot
 from src.fastAPI.catalog_cache import get_cache_data
-
+#
+from src.fastAPI.utility.threading_tools import coroutine_runner
+#
 from src.env_config import config
 THE_VAULT = config.THE_VAULT
 DOWNLOAD_DIR = config.DOWNLOAD_DIR
@@ -31,7 +33,8 @@ async def find_service(book_info : dict, user_info : dict):
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
     #kwargs = {'user':user, 'search':search,'option':'getbook'}
-    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook')))#await direct_bot(user=user,search=search,option='getbook')
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook')))
+    script_results = await coroutine_runner(direct_bot,user=user,search=search,option='getbook')
 
     if script_results:
         try:
@@ -52,8 +55,8 @@ async def find_hardmode_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
     #arguments for book_bot#
-    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook-adv')))
-
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='getbook-adv')))
+    script_results = await coroutine_runner(direct_bot,user=user,search=search,option='getbook-adv')
     if script_results:
         try:
             script_results_parse = json.loads(script_results)
