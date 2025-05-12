@@ -76,7 +76,8 @@ async def pick_service(book_info : dict, user_info : dict):
     user = user_info['username']
     search = f'{search_title} {search_author}'
 
-    script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='pick')))
+    #script_results = await asyncio.to_thread(lambda: asyncio.run(direct_bot(user=user,search=search,option='pick')))
+    script_results = await coroutine_runner(direct_bot(user=user,search=search,option='pick'))
 
     if script_results:
         try:
