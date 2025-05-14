@@ -1,6 +1,5 @@
 
 import argparse
-import json
 import asyncio
 from src.automation.auto_bot_setup import create_auto_bot
 from src.automation.auto_bot_search import bot_search

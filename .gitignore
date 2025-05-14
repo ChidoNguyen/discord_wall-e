@@ -410,5 +410,6 @@ myvenv
 *.DS_Store*
 *.ini*
 .env
+.env.*
 *.db
 *the_vault*
