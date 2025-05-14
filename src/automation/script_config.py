@@ -1,15 +1,17 @@
 import os
 import sys
+from typing import Optional
 from dotenv import load_dotenv
 ###
-load_dotenv(dotenv_path=".env.automation")
-pythonpath = os.getenv('PYTHONPATH')
-if pythonpath and pythonpath not in sys.path:
-    sys.path.insert(0,pythonpath)
-###
+load_dotenv(dotenv_path= os.path.join(os.path.dirname(__file__),".env.automation"))
+
 class ScriptConfig:
+    URL : Optional[str] = None
+    ACCOUNTS: Optional[list[str]] = None
+    PASSWORD: Optional[str] = None
+    TARGET_TITLE: Optional[str] = None
     REQUIRED_VARS = [
-        "URL", "ACCOUNTS", "PASS"
+        "URL", "ACCOUNTS", "PASSWORD","TARGET_TITLE"
     ]
     def __init__(self):
         missing_var = []
@@ -20,4 +22,6 @@ class ScriptConfig:
             setattr(self,var,value)
         if missing_var:
             print(f"[WARNING] Missing env.automation variables - {', '.join(missing_var)}")
+        ##process accounts
+        self.ACCOUNTS = [ user.strip() for user in self.ACCOUNTS.split(',') if user.strip()]
 config_automation = ScriptConfig()

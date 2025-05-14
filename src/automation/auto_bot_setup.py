@@ -1,13 +1,18 @@
 import platform
 import os
+from typing import Optional
 from selenium import webdriver
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from src.automation.bot_site_cookies import _load_cookies, _save_cookies, _valid_cookies
-from .book_bot_config import download_dir , url , userID , userPass
+#from .book_bot_config import download_dir , url , userID , userPass
+##### 
+from src.automation.script_config import config_automation as config
+#####
 from src.automation.book_bot_output import book_bot_status
 
-def _create_user_save_dir(requester):
+def _create_user_save_dir(requester: str) -> Optional[str]:
     """
     Function : generates the full path directory for where to save file for this script
     
@@ -16,9 +21,10 @@ def _create_user_save_dir(requester):
 
     Returns : str - the full user path created
     """
+    from src.env_config import config as src_config
     book_bot_status.update_step("create user save dir")
     try:
-        user_folder = os.path.join(download_dir, requester)
+        user_folder = os.path.join(src_config.DOWNLOAD_DIR, requester)
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
         return user_folder
@@ -26,7 +32,7 @@ def _create_user_save_dir(requester):
         book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
         return None
 
-def _create_auto_bot_driver(save_dir):
+def _create_auto_bot_driver(save_dir : str) ->Optional[ChromeWebdriver]:
     """
     Function : Initiates the selenium webdriver with some predetermined settings/options
     
@@ -81,7 +87,7 @@ def _create_auto_bot_driver(save_dir):
         book_bot_status.updates(('Error',f'create_auto_bot_driver - {e}'))
     return bot_driver
 
-def _get_homepage(bot_driver):
+def _get_homepage(bot_driver: ChromeWebdriver) -> Optional[ChromeWebdriver]:
     """
     Function : Navigates to homepage
     
@@ -89,15 +95,15 @@ def _get_homepage(bot_driver):
 
     Returns : webdriver  or None
     """
-    site_url = url
+    site_url = config.URL
     bot_driver.get(site_url)
     bot_driver.implicitly_wait(10)
     
-    if "Z-Library" in bot_driver.title:
+    if config.TARGET_TITLE in bot_driver.title:
         return bot_driver
     return None
 
-def _login_page(bot_driver):
+def _login_page(bot_driver) -> Optional[ChromeWebdriver]:
     """
     Function : Navigates to login page
     
@@ -116,12 +122,12 @@ def _login_page(bot_driver):
         login_link = anchor_element.get_attribute('href')
         bot_driver.get(login_link) #navigate to login page
         return bot_driver
-    except:
+    except Exception as e:
         book_bot_status.updates(('Error' , f'Login page error - {e}'))
         return None
 
     #login form
-def _login_creds_input(bot_driver):
+def _login_creds_input(bot_driver) -> Optional[ChromeWebdriver]:
     """
     Function : Attempts to login with config credentials
     
