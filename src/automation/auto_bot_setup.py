@@ -22,14 +22,18 @@ def _create_user_save_dir(requester: str) -> Optional[str]:
     Returns : str - the full user path created
     """
     from src.env_config import config as src_config
-    book_bot_status.update_step("create user save dir")
-    try:
-        user_folder = os.path.join(src_config.DOWNLOAD_DIR, requester)
-        if not os.path.exists(user_folder):
-            os.makedirs(user_folder)
-        return user_folder
-    except Exception as e:
-        book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
+    if src_config.DOWNLOAD_DIR:
+        book_bot_status.update_step("create user save dir")
+        try:
+            user_folder = os.path.join(src_config.DOWNLOAD_DIR, requester)
+            if not os.path.exists(user_folder):
+                os.makedirs(user_folder)
+            return user_folder
+        except Exception as e:
+            book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
+            return None
+    else:
+        book_bot_status.updates(("Error", 'Invalid download directory provided'))
         return None
 
 def _create_auto_bot_driver(save_dir : str) ->Optional[ChromeWebdriver]:

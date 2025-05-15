@@ -49,8 +49,8 @@ async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await pick_service(book_info,user_info)
-    message, job_json_data = novel.values()
     if novel is not None:
+        message, job_json_data = novel.values()
         background_tasks.add_task(cron_fake,job_json_data)
         return {"message" : 'acquired'}
     return None

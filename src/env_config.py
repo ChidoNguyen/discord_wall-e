@@ -1,6 +1,5 @@
 import os
 import sys
-from typing import Optional
 from dotenv import load_dotenv
 
 #load .env file
@@ -15,16 +14,16 @@ class Config:
     Loads .env file and variables into one class
     '''
     #### Type Hinting/Autocomplete Assist ###
-    DISCORD_TOKEN: Optional[str] = None
-    ADMIN_ID: Optional[str] = None
-    JANITORS: Optional[str] = None
-    PERSONAL_TEST: Optional[str] = None
-    DOWNLOAD_DIR: Optional[str] = None
-    DB_PATH: Optional[str] = None
-    THE_VAULT: Optional[str] = None
-    THE_JOBS: Optional[str] = None
-    API_ENDPOINT: Optional[str] = None
-    THE_GOODS: Optional[str] = None
+    DISCORD_TOKEN: str
+    ADMIN_ID: str | int
+    JANITORS: str | int
+    PERSONAL_TEST: str | int | None = None
+    DOWNLOAD_DIR: str
+    DB_PATH: str 
+    THE_VAULT: str 
+    THE_JOBS: str
+    API_ENDPOINT: str 
+    THE_GOODS: str 
     #########################################
     REQUIRED_ENV_VARS = [
         'DISCORD_TOKEN', 'ADMIN_ID', 'JANITORS', 'PERSONAL_TEST',
@@ -37,27 +36,22 @@ class Config:
     ]
     def __init__(self):
         missing_env_vars = []
-        missing_int_vars = []
         for var in self.REQUIRED_ENV_VARS:
             value = os.getenv(var)
             if value is None:
                 missing_env_vars.append(var)
-            setattr(self,var,value)
+            else:
+                if var in self.REQUIRED_INT_VARS:
+                    try:
+                        value= int(value)
+                    except ValueError:
+                        raise RuntimeError(f'Env variable {var} must be an integer.')
+                setattr(self,var,value)
 
         # Warning for missing vars
         if missing_env_vars:
-            print(f"[WARNING] Missing .env variables: {', '.join(missing_env_vars)}")
-
-        # Int type check/conversion
-        for var in self.REQUIRED_INT_VARS:
-            value = getattr(self,var,None)
-            try:
-                setattr(self,var,int(value))
-            except (TypeError,ValueError):
-                missing_int_vars.append(var)
+            raise RuntimeError(f"Missing required env variables : {', '.join(missing_env_vars)}")
         
-        if missing_int_vars:
-            print(f"[WARNING] Failed to convert var to int: {', '.join(missing_int_vars)}")
 
 
 config = Config()
