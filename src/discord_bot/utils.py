@@ -7,7 +7,7 @@ import shutil
 import re
 from src.env_config import config
 
-def sanitize_username(username : str):
+def sanitize_username(username : str) -> str:
     """ removes forbidden special chars from being used in file/folder or OS related naming """
     return re.sub(r'[<>:"/\\|?*.]', '', username)
 

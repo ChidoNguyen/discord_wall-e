@@ -1,7 +1,5 @@
-import asyncio
 from fastapi import APIRouter , BackgroundTasks
 from pydantic import BaseModel
-from typing import Dict , Any , Union
 from ..services import find_service , find_hardmode_service, pick_service , cron_fake , catalog_service
 
 #### Routes - > Input validation / Handlings #####
@@ -9,7 +7,7 @@ router = APIRouter()
 
 class UnknownBook(BaseModel):
     title: str
-    author : Union[None,str] = ""
+    author : str | None = ""
     #author: str = "" # want to show author option in book bot but make it optional
 
 class UserDetails(BaseModel):
@@ -22,7 +20,7 @@ async def home():
 
 @router.post("/whisperfind")
 @router.post("/find")
-async def find(unknown_book : UnknownBook, user_details : UserDetails, background_tasks : BackgroundTasks):
+async def find(unknown_book : UnknownBook, user_details : UserDetails, background_tasks : BackgroundTasks) -> dict | None:
     #print("looking")
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
@@ -36,7 +34,7 @@ async def find(unknown_book : UnknownBook, user_details : UserDetails, backgroun
     return None
 
 @router.post("/find_hardmode")
-async def find_hardmode(unknown_book : UnknownBook, user_details : UserDetails):
+async def find_hardmode(unknown_book : UnknownBook, user_details : UserDetails) -> dict | None:
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await find_hardmode_service(book_info,user_info)
@@ -45,7 +43,7 @@ async def find_hardmode(unknown_book : UnknownBook, user_details : UserDetails):
     return None
 
 @router.post("/pick")
-async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_tasks: BackgroundTasks):
+async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_tasks: BackgroundTasks) -> dict | None:
     book_info = unknown_book.model_dump()
     user_info = user_details.model_dump()
     novel = await pick_service(book_info,user_info)
@@ -56,7 +54,7 @@ async def pick(unknown_book : UnknownBook, user_details: UserDetails,background_
     return None
 
 @router.get("/catalog")
-async def catalog():
+async def catalog() -> dict | None:
     magazine = await catalog_service()
     if magazine is not None:
         return magazine

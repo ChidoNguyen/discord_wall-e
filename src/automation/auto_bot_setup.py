@@ -1,6 +1,5 @@
 import platform
 import os
-from typing import Optional
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 from selenium.webdriver.chrome.service import Service
@@ -12,7 +11,7 @@ from src.automation.script_config import config_automation as config
 #####
 from src.automation.book_bot_output import book_bot_status
 
-def _create_user_save_dir(requester: str) -> Optional[str]:
+def _create_user_save_dir(requester: str) -> str | None:
     """
     Function : generates the full path directory for where to save file for this script
     
@@ -22,21 +21,17 @@ def _create_user_save_dir(requester: str) -> Optional[str]:
     Returns : str - the full user path created
     """
     from src.env_config import config as src_config
-    if src_config.DOWNLOAD_DIR:
-        book_bot_status.update_step("create user save dir")
-        try:
-            user_folder = os.path.join(src_config.DOWNLOAD_DIR, requester)
-            if not os.path.exists(user_folder):
-                os.makedirs(user_folder)
-            return user_folder
-        except Exception as e:
-            book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
-            return None
-    else:
-        book_bot_status.updates(("Error", 'Invalid download directory provided'))
+    book_bot_status.update_step("create user save dir")
+    try:
+        user_folder = os.path.join(src_config.DOWNLOAD_DIR, requester)
+        if not os.path.exists(user_folder):
+            os.makedirs(user_folder)
+        return user_folder
+    except Exception as e:
+        book_bot_status.updates(('Error',f'create_user_save_dir - {e}'))
         return None
 
-def _create_auto_bot_driver(save_dir : str) ->Optional[ChromeWebdriver]:
+def _create_auto_bot_driver(save_dir : str) ->ChromeWebdriver | None:
     """
     Function : Initiates the selenium webdriver with some predetermined settings/options
     
@@ -91,7 +86,7 @@ def _create_auto_bot_driver(save_dir : str) ->Optional[ChromeWebdriver]:
         book_bot_status.updates(('Error',f'create_auto_bot_driver - {e}'))
     return bot_driver
 
-def _get_homepage(bot_driver: ChromeWebdriver) -> Optional[ChromeWebdriver]:
+def _get_homepage(bot_driver: ChromeWebdriver) -> ChromeWebdriver | None:
     """
     Function : Navigates to homepage
     
@@ -107,7 +102,7 @@ def _get_homepage(bot_driver: ChromeWebdriver) -> Optional[ChromeWebdriver]:
         return bot_driver
     return None
 
-def _login_page(bot_driver) -> Optional[ChromeWebdriver]:
+def _login_page(bot_driver : ChromeWebdriver) -> ChromeWebdriver | None:
     """
     Function : Navigates to login page
     
@@ -124,14 +119,17 @@ def _login_page(bot_driver) -> Optional[ChromeWebdriver]:
         login_link_div = bot_driver.find_element(By.CLASS_NAME , login_html_text['login-div'])
         anchor_element = login_link_div.find_element(By.TAG_NAME, 'a')
         login_link = anchor_element.get_attribute('href')
-        bot_driver.get(login_link) #navigate to login page
-        return bot_driver
     except Exception as e:
         book_bot_status.updates(('Error' , f'Login page error - {e}'))
         return None
+    
+    if login_link:
+        return bot_driver.get(login_link)
+    else:
+        return None
 
     #login form
-def _login_creds_input(bot_driver) -> Optional[ChromeWebdriver]:
+def _login_creds_input(bot_driver: ChromeWebdriver) -> ChromeWebdriver | None:
     """
     Function : Attempts to login with config credentials
     
@@ -140,7 +138,7 @@ def _login_creds_input(bot_driver) -> Optional[ChromeWebdriver]:
     Returns : Webdriver or None
     """
     
-    uID , uPass = userID , userPass
+    uID , uPass = config.ACCOUNTS[0] , config.PASSWORD
 
     login_form = bot_driver.find_element(By.TAG_NAME, "form")
     idEntry = login_form.find_element(By.NAME, 'email').send_keys(uID)
@@ -156,7 +154,7 @@ def _login_creds_input(bot_driver) -> Optional[ChromeWebdriver]:
 
 
 
-def create_auto_bot(requester):
+def create_auto_bot(requester : str) -> tuple[ChromeWebdriver | None, str | None]:
     """
     Function : Wrapper function to setup our initial webdriver (login/cookies)
     
@@ -166,7 +164,8 @@ def create_auto_bot(requester):
     Returns : webdriver or None
     """
     save_dir = _create_user_save_dir(requester)
-
+    if save_dir is None:
+        return None , None
     ab_driver = _create_auto_bot_driver(save_dir) #setup our initial webdriver client
     homepage_driver = login_element_driver = logged_in_driver = None
     if ab_driver:

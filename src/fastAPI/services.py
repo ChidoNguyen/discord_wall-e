@@ -4,7 +4,6 @@ import os
 import shutil
 import sqlite3
 import time
-import asyncio
 from src.automation.book_bot import direct_bot
 from src.fastAPI.catalog_cache import get_cache_data
 #
@@ -23,7 +22,7 @@ Selenium Script Formatted Output (JSON):
     steps : list
     misc : list
 '''
-async def find_service(book_info : dict, user_info : dict):
+async def find_service(book_info : dict, user_info : dict) -> dict | None:
     search_title = book_info['title']
     search_author = book_info['author']
     user = user_info['username']
@@ -42,11 +41,10 @@ async def find_service(book_info : dict, user_info : dict):
                     }
         except Exception as e:
             print(e)
-            pass
     return None
 
 ########
-async def find_hardmode_service(book_info : dict, user_info : dict):
+async def find_hardmode_service(book_info : dict, user_info : dict) -> dict | None:
     search_title = book_info['title']
     search_author = book_info['author']
     user = user_info['username']
@@ -64,10 +62,9 @@ async def find_hardmode_service(book_info : dict, user_info : dict):
                     }
         except Exception as e:
             print(e)
-            pass
     return None
 
-async def pick_service(book_info : dict, user_info : dict):
+async def pick_service(book_info : dict, user_info : dict) -> dict | None:
     search_title = book_info['title']
     search_author = book_info['author']
     user = user_info['username']
@@ -88,11 +85,11 @@ async def pick_service(book_info : dict, user_info : dict):
             print(e)
     return None
   
-async def catalog_service():
+async def catalog_service() -> dict:
     await cron_fake(None)
     return {'catalog' : get_cache_data()}
 
-async def _create_database_job(job_details):
+async def _create_database_job(job_details) -> str:
     '''
     Params : Dictionary of info needed to do the job source path / author / title/ username
         source : str - full path to where the finished file is residing
@@ -119,7 +116,7 @@ async def _create_database_job(job_details):
 
     return { 'author' : author , 'title' : title}
  """
-async def to_the_vault(user):
+async def to_the_vault(user) -> None:
     #get the newest file in folder 
     #move to the vault
     try:
@@ -131,7 +128,7 @@ async def to_the_vault(user):
         shutil.move(newest_file,os.path.join(config.THE_VAULT,'the_goods'))
     finally:
         return
-async def _register_vault(job_details):
+async def _register_vault(job_details) -> tuple[bool, str | None]:
     #all are expected to be present direct access for error raising
     source = job_details['source']
     aut_fname = job_details['fname']
@@ -158,7 +155,7 @@ async def _register_vault(job_details):
 
             
 
-async def cron_fake(job_details):
+async def cron_fake(job_details) -> None:
     if job_details is not None:
         await _create_database_job(job_details)
     job_listings = [os.path.join(config.THE_JOBS,files) for files in os.listdir(config.THE_JOBS) if files.endswith('json')]

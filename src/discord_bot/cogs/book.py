@@ -317,7 +317,7 @@ class Book(commands.Cog):
             print(f"A client error occurred - {task_route}: {e}")
         except Exception as e:
             print(f"An unexpected error occured - {task_route}: {e}")
-        await original_response.edit(content=f"```Try again later... and I mean later later.```")
+        await original_response.edit(content="```Try again later... and I mean later later.```")
         return False
 
     async def _book_cog_get_handle(
