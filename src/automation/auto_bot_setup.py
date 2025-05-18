@@ -172,7 +172,7 @@ def create_auto_bot(requester : str) -> tuple[ChromeWebdriver | None, str | None
         homepage_driver = _get_homepage(ab_driver)
 
     #cookies check to see if login is needed
-    if _valid_cookies():
+    if _valid_cookies() and homepage_driver:
         book_bot_status.update_step('Cookies login')
         _load_cookies(homepage_driver)
         return homepage_driver, save_dir
@@ -182,7 +182,8 @@ def create_auto_bot(requester : str) -> tuple[ChromeWebdriver | None, str | None
             login_element_driver = _login_page(homepage_driver)
         if login_element_driver:
             logged_in_driver = _login_creds_input(login_element_driver)
-        _save_cookies(logged_in_driver)
+        if logged_in_driver:
+            _save_cookies(logged_in_driver)
         return logged_in_driver, save_dir
 
 if __name__ == '__main__':

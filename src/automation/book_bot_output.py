@@ -2,6 +2,8 @@
 import json
 class BookScriptStatus:
     _instance = None
+    valid_keys: set
+    output: dict
 
     def __new__(cls): #new is the box #init fills it
         #create itself
@@ -17,7 +19,7 @@ class BookScriptStatus:
             }
         return cls._instance
     
-    def updates(self,*args):
+    def updates(self,*args : tuple[str,str | dict | Exception]):
         for key,data in args:
             match key:
                 case 'metadata':
@@ -29,16 +31,16 @@ class BookScriptStatus:
                 case _:
                     self.output['misc'].append(data)
 
-    def set_status(self,status):
+    def set_status(self,status:str):
         self.output['status'] = status
 
     def update_step(self,step:str):
         self.output['steps'].append(step)
         
-    def get_output(self):
+    def get_output(self) -> dict:
         return self.output
     
-    def get_json_output(self):
+    def get_json_output(self) ->str:
         return json.dumps(self.output)
 
 book_bot_status = BookScriptStatus()

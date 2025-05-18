@@ -60,7 +60,8 @@ def book_bot():
     if _check_max_limit(bot_driver):
         book_bot_status.updates(('message','Download limit reached. Wait or change accounts'))
         print(book_bot_status.get_json_output())
-        bot_driver.quit()
+        if bot_driver:
+            bot_driver.quit()
         return None
     book_bot_status.update_step('Download limit check.')
     ### clean up assurance ##
@@ -145,7 +146,8 @@ async def direct_bot(user : str , search: str , option: str):
     if _check_max_limit(bot_driver):
         book_bot_status.updates(('message','Download limit reached. Wait or change accounts'))
         print(book_bot_status.get_json_output())
-        bot_driver.quit()
+        if bot_driver:
+            bot_driver.quit()
         return None
     book_bot_status.update_step('Download limit check.')
     try:
