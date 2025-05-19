@@ -25,9 +25,11 @@ async def book_bot(user: str, search: str, option: str):
     
     #starting point
     bot_webdriver.get(config.URL)
-    
-    login_status = perform_login(bot_webdriver)
+
+    # TODO(c) :  implicit wait settings and closing global bot stuff #
+    login_status , error_msg = perform_login(bot_webdriver)
     if not login_status:
+        book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}")) 
         return
     pass
 

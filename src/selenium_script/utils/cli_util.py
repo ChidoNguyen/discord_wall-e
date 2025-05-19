@@ -21,7 +21,7 @@ def parse_arg(argv: list[str] | None = None) -> tuple[str, str, str]:
     parser.add_argument('--user' , type = str , required= True,
                         help = "User's name to help with file organization and task tracking.")
     parser.add_argument('--option', type = str, required= True,
-                        choices=['getbook','getbook-adv','pick'], help= 'Designates the bot for usage type among: getbook ,getbook-adv, pick')
+                        choices=BOT_SETTINGS, help= 'Designates the bot for usage type among: getbook ,getbook-adv, pick')
 
     args = parser.parse_args(argv)
     return args.user, args.search, args.option

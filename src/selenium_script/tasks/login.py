@@ -5,24 +5,36 @@ from src.selenium_script.script_config import config_automation as config
 
 from pages.homepage import HomePage
 from pages.login_page import LoginPage
-def perform_login(driver : ChromeWebdriver):
+
+from exceptions.homepage import LoginRedirectFailed
+from exceptions.login_page import LoginPageElementNotFound, LoginProcedureFailed, LoginVerificationError
+
+def perform_login(driver : ChromeWebdriver) -> tuple[bool,str|Exception]:
     home = HomePage(driver)
     if not home.is_home_page():
-        return False , "Not on home page"
+        return False , NoSuchElementException("Missing home page elements.")
     
-    navigation_status , error_msg = home.go_to_login_page()
-    if not navigation_status:
-        return False , "Webdriver could not get to login url."
+    #go to login url
+    try:
+        home.go_to_login_page()
+    except LoginRedirectFailed as e:
+        return False , e
+    
     login_page = LoginPage(driver)
-    if not login_page.is_login_page():
-        return False , "Might not be on login page"
+    try:
+        login_page.is_login_page()
+    except LoginPageElementNotFound as e:
+        return False, e
+   
     
     try:
         login_page.perform_login(config.ACCOUNTS[0],config.PASSWORD)
-    except Exception as e:
-        return False , str(e)
+    except LoginProcedureFailed as e:
+        return False , e
     
-    if not login_page.valid_login():
-        return False
+    try:
+        login_page.valid_login()
+    except LoginVerificationError as e:
+        return False, e
     
-    return True
+    return True,''
