@@ -5,6 +5,9 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from utils.script_status import book_bot_status
 from utils.cli_util import parse_arg, direct_script_arg_validation
 from utils.webdriver_setup import setup_webdriver
+from tasks.login import perform_login
+from src.selenium_script.script_config import config_automation as config
+
 async def book_bot(user: str, search: str, option: str):
 
     # validates our function arguments
@@ -20,6 +23,12 @@ async def book_bot(user: str, search: str, option: str):
         book_bot_status.updates(("Error", "[Error] [Setup - No webdriver created]"))
         return 
     
+    #starting point
+    bot_webdriver.get(config.URL)
+    
+    login_status = perform_login(bot_webdriver)
+    if not login_status:
+        return
     pass
 
 def cli_main():
