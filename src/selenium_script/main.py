@@ -2,10 +2,10 @@ import asyncio
 
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 
-from utils.script_status import book_bot_status
-from utils.cli_util import parse_arg, direct_script_arg_validation
-from utils.webdriver_setup import setup_webdriver
-from tasks.login import perform_login
+from src.selenium_script.utils.script_status import book_bot_status
+from src.selenium_script.utils.cli_util import parse_arg, direct_script_arg_validation
+from src.selenium_script.utils.webdriver_setup import setup_webdriver
+from src.selenium_script.tasks.login import perform_login
 from src.selenium_script.script_config import config_automation as config
 
 async def book_bot(user: str, search: str, option: str):
@@ -24,8 +24,9 @@ async def book_bot(user: str, search: str, option: str):
         return 
     
     #starting point
+    bot_webdriver.implicitly_wait(10)
     bot_webdriver.get(config.URL)
-
+    
     # TODO(c) :  implicit wait settings and closing global bot stuff #
     login_status , error_msg = perform_login(bot_webdriver)
     if not login_status:

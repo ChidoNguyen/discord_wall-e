@@ -8,8 +8,9 @@ class ScriptConfig:
     ACCOUNTS: str | list[str]
     PASSWORD: str
     TARGET_TITLE: str
+    COOKIES_DIR: str
     REQUIRED_VARS = [
-        "URL", "ACCOUNTS", "PASSWORD","TARGET_TITLE"
+        "URL", "ACCOUNTS", "PASSWORD","TARGET_TITLE","COOKIES_DIR"
     ]
     def __init__(self):
         missing_var = []

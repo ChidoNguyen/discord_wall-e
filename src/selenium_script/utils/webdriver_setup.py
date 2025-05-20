@@ -4,10 +4,10 @@ from selenium.webdriver.chrome.webdriver import  WebDriver as ChromeWebDriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 
-from utils.script_status import book_bot_status
-from utils.util import create_user_save_dir
+from src.selenium_script.utils.script_status import book_bot_status
+from src.selenium_script.utils.util import create_user_save_dir
 
-def _build_chrome_options(download_path: str, headless=True) -> ChromeOptions:
+def _build_chrome_options(download_path: str, headless: bool = True) -> ChromeOptions:
     options = ChromeOptions()
     if headless:
         options.add_argument("--headless=new")
@@ -48,7 +48,7 @@ def _create_chrome_driver(chrome_options: ChromeOptions) -> ChromeWebDriver:
     ''' creates webdriver instance '''
     return ChromeWebDriver(options=chrome_options,service=Service('/usr/bin/chromedriver')) if platform.system() == 'Linux' else ChromeWebDriver(options=chrome_options)
     
-def setup_webdriver(user: str, headless=True) -> ChromeWebDriver | None:
+def setup_webdriver(user: str, headless: bool = True) -> ChromeWebDriver | None:
     """
     Initializes our chrome webdriver
 
@@ -62,6 +62,6 @@ def setup_webdriver(user: str, headless=True) -> ChromeWebDriver | None:
         book_bot_status.updates(("Error" , f"[Error] [Setup - Download path] : {e}"))
         return None
     
-    options=_build_chrome_options(download_path)
+    options=_build_chrome_options(download_path,headless=headless)
 
     return _create_chrome_driver(options)
