@@ -4,10 +4,10 @@ def create_user_save_dir(user: str) -> str:
     """
     Creates a directory named after the requester at environment defined base directory.
     
-    Args:
-        - requester: str = user's name
+    Args :
+        - requester : str = user's name
 
-    Returns:
+    Returns :
         - full path (str) or None
     """
     from src.env_config import config as src_config

@@ -6,6 +6,7 @@ from src.selenium_script.utils.script_status import book_bot_status
 from src.selenium_script.utils.cli_util import parse_arg, direct_script_arg_validation
 from src.selenium_script.utils.webdriver_setup import setup_webdriver
 from src.selenium_script.tasks.login import perform_login
+from src.selenium_script.utils.cookies import load_cookies
 from src.selenium_script.script_config import config_automation as config
 
 async def book_bot(user: str, search: str, option: str):
@@ -18,7 +19,7 @@ async def book_bot(user: str, search: str, option: str):
         print(book_bot_status.get_json_output())
         return
     
-    bot_webdriver = setup_webdriver(user)
+    bot_webdriver = setup_webdriver(user,headless=False)
     if not bot_webdriver:
         book_bot_status.updates(("Error", "[Error] [Setup - No webdriver created]"))
         return 
@@ -26,15 +27,22 @@ async def book_bot(user: str, search: str, option: str):
     #starting point
     bot_webdriver.implicitly_wait(10)
     bot_webdriver.get(config.URL)
-    
-    # TODO(c) :  implicit wait settings and closing global bot stuff #
+
+    #Cookies
+    cookies_status , error_msg = load_cookies(bot_webdriver)
+    if not cookies_status:
+        #if needed we can log cause
+        #tmp = error_msg.__cause___ since we've been chaing exceptions up
+        book_bot_status.updates(("Error", f"[Error] [load_cookies] : {error_msg}")) 
+        return
+    #Login 
     login_status , error_msg = perform_login(bot_webdriver)
     if not login_status:
         book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}")) 
         return
     pass
 
-def cli_main():
+def cli_main():#
     user, search, option = parse_arg()
     result = asyncio.run(book_bot(user=user,search=search,option=option))
     return result
