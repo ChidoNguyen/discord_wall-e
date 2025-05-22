@@ -54,6 +54,10 @@ def setup_webdriver(user: str, headless: bool = True) -> tuple[ChromeWebDriver |
 
     Arguments:
         user(str): Will be used to name download directory
+
+    Returns:
+    A tuple of (webdriver or None, download_path if success else error message or Exception)
+
     """
 
     try:

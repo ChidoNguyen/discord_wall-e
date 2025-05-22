@@ -22,11 +22,14 @@ async def book_bot(user: str, search: str, option: str):
         print(book_bot_status.get_json_output())
         return
     
-    bot_webdriver = setup_webdriver(user,headless=False)
+    bot_webdriver , setup_msg = setup_webdriver(user)#,headless=False)
     if not bot_webdriver:
         book_bot_status.updates(("Error", "[Error] [Setup - No webdriver created]"))
-        return 
-    
+        return
+    #since setup_msg can be exception or full file path we re-assign to clearer named variable if its a valid driver guard check
+
+    user_download_dir = setup_msg
+
     #starting point
     bot_webdriver.implicitly_wait(10)
     bot_webdriver.get(config.URL)
@@ -44,7 +47,7 @@ async def book_bot(user: str, search: str, option: str):
         book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}")) 
         return
     #Main "jobs" of the script
-    job_status , error_msg = perform_script_option() # type: ignore
+    job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, option=option) # type: ignore
 
     pass
 
