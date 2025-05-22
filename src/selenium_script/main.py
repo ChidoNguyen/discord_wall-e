@@ -5,8 +5,11 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from src.selenium_script.utils.script_status import book_bot_status
 from src.selenium_script.utils.cli_util import parse_arg, direct_script_arg_validation
 from src.selenium_script.utils.webdriver_setup import setup_webdriver
+from selenium_script.utils.cookies_util import load_cookies
+
 from src.selenium_script.tasks.login import perform_login
-from src.selenium_script.utils.cookies import load_cookies
+from src.selenium_script.tasks.job_wrapper import perform_script_option
+
 from src.selenium_script.script_config import config_automation as config
 
 async def book_bot(user: str, search: str, option: str):
@@ -40,6 +43,9 @@ async def book_bot(user: str, search: str, option: str):
     if not login_status:
         book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}")) 
         return
+    #Main "jobs" of the script
+    job_status , error_msg = perform_script_option() # type: ignore
+
     pass
 
 def cli_main():#

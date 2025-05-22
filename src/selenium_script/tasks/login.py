@@ -6,7 +6,7 @@ from src.selenium_script.script_config import config_automation as config
 from src.selenium_script.pages.homepage import HomePage
 from src.selenium_script.pages.login_page import LoginPage
 from src.selenium_script.pages.download_history import DownloadHistory
-from src.selenium_script.utils.cookies import save_cookies
+from selenium_script.utils.cookies_util import save_cookies
 
 from src.selenium_script.exceptions.homepage import LoginRedirectFailed
 from src.selenium_script.exceptions.login_page import LoginPageElementNotFound, LoginProcedureFailed, LoginVerificationError

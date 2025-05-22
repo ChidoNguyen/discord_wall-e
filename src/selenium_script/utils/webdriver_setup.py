@@ -48,7 +48,7 @@ def _create_chrome_driver(chrome_options: ChromeOptions) -> ChromeWebDriver:
     ''' creates webdriver instance '''
     return ChromeWebDriver(options=chrome_options,service=Service('/usr/bin/chromedriver')) if platform.system() == 'Linux' else ChromeWebDriver(options=chrome_options)
     
-def setup_webdriver(user: str, headless: bool = True) -> ChromeWebDriver | None:
+def setup_webdriver(user: str, headless: bool = True) -> tuple[ChromeWebDriver | None, str | Exception]:
     """
     Initializes our chrome webdriver
 
@@ -60,8 +60,8 @@ def setup_webdriver(user: str, headless: bool = True) -> ChromeWebDriver | None:
         download_path = create_user_save_dir(user)
     except Exception as e:
         book_bot_status.updates(("Error" , f"[Error] [Setup - Download path] : {e}"))
-        return None
+        return None , e
     
     options=_build_chrome_options(download_path,headless=headless)
 
-    return _create_chrome_driver(options)
+    return _create_chrome_driver(options) , download_path
