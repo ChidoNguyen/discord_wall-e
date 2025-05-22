@@ -413,3 +413,4 @@ myvenv
 .env.*
 *.db
 *the_vault*
+**/cookies*/
