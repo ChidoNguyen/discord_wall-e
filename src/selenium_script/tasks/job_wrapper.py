@@ -40,7 +40,9 @@ def _get_handle(driver : ChromeWebdriver, search_query: str):
     
     # acquire 
     try:
-        acquire_job()
+        acquire_job(driver,result_urls)
+    except Exception as e:
+        return e
     pass
 
 def _get_advance_handle():
