@@ -127,7 +127,7 @@ def _get_download_metadata(target_file : str):
     
     Arguments : target_file - str - full path to file
 
-    Returns : dictionary with keys author/title and value associated to them
+    Returns : dictionary with keys author/title and value associated to them [lname,fname,title]
     """
     literature = epub.read_epub(target_file)
     lit_author = literature.get_metadata('DC','creator')[0][0]

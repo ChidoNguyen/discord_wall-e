@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from src.selenium_script.script_config import config_automation as config
 
-from src.selenium_script.pages.homepage import HomePage
+from selenium_script.pages.home_page import HomePage
 from src.selenium_script.pages.login_page import LoginPage
 from src.selenium_script.pages.download_history import DownloadHistory
 from selenium_script.utils.cookies_util import save_cookies
