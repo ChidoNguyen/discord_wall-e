@@ -23,7 +23,7 @@ class ResultDetailPage:
         ''' saves current url and loads/sends driver to details page '''
         self.prev_url = self.driver.current_url
         self.driver.get(self.details_url)
-        
+      
     def _locate_download_button(self):
         # XXX might really need to do waits here
         try:
