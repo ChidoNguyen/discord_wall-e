@@ -10,7 +10,7 @@ class DownloadHistory:
         self.driver = driver
 
         self._url_history = driver.current_url
-        self._visit_history = False
+        self.visit_history = False
 
         self._download_limit_container: WebElement
         self._download_count : int = -1

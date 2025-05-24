@@ -22,7 +22,7 @@ async def book_bot(user: str, search: str, option: str):
         print(book_bot_status.get_json_output())
         return
     
-    bot_webdriver , setup_msg = setup_webdriver(user)#,headless=False)
+    bot_webdriver , setup_msg = setup_webdriver(user,headless=False)
     if not bot_webdriver:
         book_bot_status.updates(("Error", "[Error] [Setup - No webdriver created]"))
         return
@@ -36,16 +36,18 @@ async def book_bot(user: str, search: str, option: str):
 
     #Cookies
     cookies_status , error_msg = load_cookies(bot_webdriver)
-    if not cookies_status:
+    if error_msg: # instead of cookie status track error b/c loading cookies is a luxury, login/save if our cookies arent good to go.
         #if needed we can log cause
         #tmp = error_msg.__cause___ since we've been chaing exceptions up
         book_bot_status.updates(("Error", f"[Error] [load_cookies] : {error_msg}")) 
-        return
+        print(book_bot_status.get_json_output())
     #Login 
     login_status , error_msg = perform_login(bot_webdriver)
     if not login_status:
-        book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}")) 
-        return
+        book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}"))
+        return book_bot_status.get_json_output()
+
+    return
     #Main "jobs" of the script
     job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, option=option) # type: ignore
 

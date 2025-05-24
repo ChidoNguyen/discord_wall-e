@@ -50,6 +50,7 @@ def _fetch_local_cookies() -> list[dict]:
     except Exception as e:
         raise RuntimeError("Could not load cookies.") from e
     
+    
 def load_cookies(driver: ChromeWebdriver) -> tuple[bool , Exception |  None]:
     """ TASK : fetches local cookie info , verifies, and injects into webdriver 
     
@@ -65,9 +66,16 @@ def load_cookies(driver: ChromeWebdriver) -> tuple[bool , Exception |  None]:
 
 def save_cookies(driver: ChromeWebdriver) -> tuple[bool,Exception| None]:
     """ Saves  cookies we currently have in selenium chrome driver to a pickle file. """
+
+    # redirect cookie expires fast - filter out
+    all_cookies = driver.get_cookies()
+    filtered_cookies = [
+        cookie for cookie in all_cookies
+        if cookie.get('name') != 'redirects_count' and 'expiry' in cookie
+    ]
     try:
         with open(os.path.join(config.COOKIES_DIR,COOKIES_FILE) , 'wb') as file:
-            pickle.dump(driver.get_cookies(),file)
+            pickle.dump(filtered_cookies,file)
         return True, None
     except Exception as e:
         # new exception to maintain "task" level returns are bool,[Exception or str]

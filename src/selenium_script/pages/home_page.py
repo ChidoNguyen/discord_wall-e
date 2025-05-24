@@ -14,7 +14,7 @@ class HomePage:
         ''' Checks if current page is home page '''
         return config.TARGET_TITLE in self.driver.title
     
-    def _get_login_url(self) -> str:
+    def get_login_url(self) -> str:
         ''' 
             Extracts the url that will redirect to login page.
             Avoid's having to handle clicking an element to trigger a modal pop-up for login.
@@ -49,7 +49,7 @@ class HomePage:
             )
         
         return login_url
-    
+    '''
     def go_to_login_page(self) ->Exception | None:
         try:
             login_url = self._get_login_url()
@@ -60,4 +60,6 @@ class HomePage:
                 message= "Could not redirect to login landing page.",
                 action= "webdriver '.get' "
             ) from e
+
+    '''
 

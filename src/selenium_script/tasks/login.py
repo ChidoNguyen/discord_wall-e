@@ -32,8 +32,10 @@ def perform_login(driver : ChromeWebdriver) -> tuple[bool,Exception | None]:
         return False , NoSuchElementException("Missing home page elements.")
     
     #Navigate and check login page
-
+    login_page_url = home.get_login_url()
+    driver.get(login_page_url)
     login_page = LoginPage(driver)
+    
     try:
         login_page.is_login_page()
     except LoginPageElementNotFound as e:

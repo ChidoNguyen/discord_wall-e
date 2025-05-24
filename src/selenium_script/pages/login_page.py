@@ -11,6 +11,7 @@ class LoginPage:
         self.driver = driver
 
     def is_login_page(self) -> bool:
+        # XXX Need a better check ###
         login_form_tag = 'form'
         try:
             self.login_form = self.driver.find_element(By.TAG_NAME,login_form_tag)
