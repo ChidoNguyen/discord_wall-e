@@ -19,7 +19,7 @@ Notes to self:
 
 
 
-def _get_handle(driver : ChromeWebdriver, search_query: str):
+def _get_handle(driver : ChromeWebdriver, search_query: str , download_dir: str):
     """
     Main script job gets top/first search result
 
@@ -40,23 +40,27 @@ def _get_handle(driver : ChromeWebdriver, search_query: str):
     
     # acquire 
     try:
-        acquire_job(driver,result_urls)
+        acquire_status = acquire_job(driver=driver, download_dir=download_dir,results=result_urls)
     except Exception as e:
         return e
-    pass
+    
+    if acquire_status:
+        print(acquire_status)
+    print("No new files")
 
 def _get_advance_handle():
     pass
 def _pick_handle():
     pass
 
-def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, option: str):
+def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: str, option: str):
     """
     Entry point for core jobs of script. Will delegate and invoke the proper job to function correlation.
     """
-
+    _get_handle(driver,search,download_dir)
     #don't think we need to add arg. checker script itself is pretty atomic won't work up to this point... but we'll see
-
+    print("HOLD UP")
+    return
     option_handler_map = {
         'getbook' : _get_handle,
         'getbook-adv' : _get_advance_handle,

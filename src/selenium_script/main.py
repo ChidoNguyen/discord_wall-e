@@ -47,10 +47,10 @@ async def book_bot(user: str, search: str, option: str):
         book_bot_status.updates(("Error", f"[Error] [perform_login] : {error_msg}"))
         return book_bot_status.get_json_output()
 
-    return
     #Main "jobs" of the script
-    job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, option=option) # type: ignore
+    job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, search=search,option=option)
 
+    return
     pass
 
 def cli_main():#

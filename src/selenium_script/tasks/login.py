@@ -44,6 +44,7 @@ def perform_login(driver : ChromeWebdriver) -> tuple[bool,Exception | None]:
     # valid login check via cookies loading
     try:
         login_page.valid_login()
+        driver.get(config.URL)
         return True , None
     except LoginVerificationError:
         pass #pass here b/c its the initial "are my cookies good" check essentially
