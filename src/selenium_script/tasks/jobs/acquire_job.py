@@ -15,8 +15,8 @@ def acquire_job(*,driver: ChromeWebdriver, download_dir: str,  results: list[str
 
     detail_url = results[url_idx]
 
-    details_page = ResultDetailPage(driver,detail_url)
-    details_page.load()
+    details_page = ResultDetailPage(driver)
+    details_page.load(details_url=detail_url)
     # check 
     if detail_url not in driver.current_url:
         raise ResultDetailJobError(

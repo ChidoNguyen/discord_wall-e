@@ -35,7 +35,7 @@ class SearchResultPage:
         """ Gets the container that will have all the details for each individual search result component/item/container """
         info_card_class_name = 'z-bookcard'
         try:
-            self.results_containers = self.driver.find_elements(By.CLASS_NAME,info_card_class_name)
+            self.results_containers = self.driver.find_elements(By.TAG_NAME,info_card_class_name)
         except NoSuchElementException as e:
             raise SearchResultPageError(
                 message="Could not locate search result card/container information.",

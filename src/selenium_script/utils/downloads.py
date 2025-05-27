@@ -14,24 +14,36 @@ def get_folder_snapshot(*,user_folder: str, key: str = "") -> set:
         currently only path, or left empty to default the whole object.
     """
     # scandir over listdir , for overhead, metadata (later) , iterative vs listdir loading full
-    if key == 'path':
-        return {dir_item.path for dir_item in os.scandir(user_folder) if dir_item.is_file()}
+
+    #need to filter out .tmp extension files#
+    def is_valid_file(dir_entry: os.DirEntry):
+        return dir_entry.is_file() and not dir_entry.name.endswith('.tmp')
     
-    return {dir_item for dir_item in os.scandir(user_folder) if dir_item.is_file()}
+    if key == 'path':
+        return {dir_item.path for dir_item in os.scandir(user_folder) if is_valid_file(dir_item)}
+    
+    return {dir_item for dir_item in os.scandir(user_folder) if is_valid_file(dir_item)}
 
 def _check_download(*,user_folder:str, old_files: set[str],timeout_limit: int = 60) -> bool:
     """ Polls user download directory for in progress download remnants. 
     Returns bool for download status
     """
     timeout_counter = 0
-
-    new_snapshot = get_folder_snapshot(user_folder=user_folder,key="path")
-    new_files = new_snapshot.difference(old_files)
-
-    if not new_files:
-        return False 
-    new_file_dir_obj = new_files.pop()
-    new_file = new_file_dir_obj.path
+    # need to buy time for driver to have "new/temp" download file populate
+    max_wait_for_new = 5 #seconds
+    poll_rate = .5
+    while max_wait_for_new > 0:
+        new_snapshot = get_folder_snapshot(user_folder=user_folder,key="path")
+        new_files = new_snapshot.difference(old_files)
+        if new_files:
+            break
+        max_wait_for_new -= poll_rate
+        time.sleep(poll_rate)
+    else:
+        #aka if no new files reutrn false
+        return False #  else for "WHILE" needs break or else it'll trigger
+    
+    new_file = new_files.pop()
     # might have finished by the time script arrives here
     #return early 
     if os.path.exists(new_file) and not new_file.endswith('.crdownload'):
@@ -54,8 +66,6 @@ def _get_newest(*,download_path:str) -> str:
     # os.scandir entries, stat is a method of the class use lambda
     newest_file = max(all_files, key= lambda f: f.stat().st_ctime)
     return newest_file.path if newest_file else ''
-
-
 
 def _rename_file(*,download_dir: str,file_path:str, data: dict[str,str]):
 
@@ -85,4 +95,16 @@ def rename_download(*,download_path: str) -> dict[str,str]:
     
 def check_download_status(*,user_folder:str,old_files: set[str]):
     return _check_download(user_folder=user_folder,old_files=old_files)
+
+def results_out():
+    """ json_object = {
+            'link' : url,
+            'author' : author,
+            'title' : title
+        }
+        json_data.append(json_object)
+    
+    with open(os.path.join(user_folder,'results.json'),'w') as json_file:
+        json.dump(json_data,json_file,indent=4)
+    return True """
     
