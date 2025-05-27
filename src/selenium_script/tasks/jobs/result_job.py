@@ -54,7 +54,7 @@ def _result_job(driver: ChromeWebdriver) -> list[str]:
     try:
         result_page.locate_search_results_containers()
     except SearchResultPageError as e:
-        pass
+        raise e
     results_containers: list[WebElement] = result_page.results_containers
 
     # need to filter out results to things we want.

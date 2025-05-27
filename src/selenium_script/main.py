@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from src.selenium_script.utils.script_status import book_bot_status
 from src.selenium_script.utils.cli_util import parse_arg, direct_script_arg_validation
 from src.selenium_script.utils.webdriver_setup import setup_webdriver
-from selenium_script.utils.cookies_util import load_cookies
+from src.selenium_script.utils.cookies_util import load_cookies
 
 from src.selenium_script.tasks.login import perform_login
 from src.selenium_script.tasks.job_wrapper import perform_script_option
@@ -22,13 +22,13 @@ async def book_bot(user: str, search: str, option: str):
         print(book_bot_status.get_json_output())
         return
     
-    bot_webdriver , setup_msg = setup_webdriver(user,headless=False)
+    bot_webdriver , setup_msg = setup_webdriver(user)
     if not bot_webdriver:
         book_bot_status.updates(("Error", "[Error] [Setup - No webdriver created]"))
         return
     #since setup_msg can be exception or full file path we re-assign to clearer named variable if its a valid driver guard check
 
-    user_download_dir = setup_msg
+    user_download_dir = str(setup_msg)
 
     #starting point
     bot_webdriver.implicitly_wait(10)
@@ -49,9 +49,15 @@ async def book_bot(user: str, search: str, option: str):
 
     #Main "jobs" of the script
     job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, search=search,option=option)
-
+    if not job_status:
+        book_bot_status.updates(("Error", f"[Error] [Download] : {error_msg}"))
+        return book_bot_status.get_json_output()
+    
+    if bot_webdriver and 'bot_webdriver' in locals():
+        bot_webdriver.quit()
+        
     return
-    pass
+    
 
 def cli_main():#
     user, search, option = parse_arg()

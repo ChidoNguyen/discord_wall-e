@@ -10,19 +10,19 @@ from src.selenium_script.exceptions.result_detail import ResultDetailPageError
 from src.selenium_script.script_config import config_automation as config
 # XXX MIGHT NEED TO DO HUGE WAIT STUFF HERE XXX #
 class ResultDetailPage:
-    def __init__(self, driver: ChromeWebdriver , path: str):
+    def __init__(self, driver: ChromeWebdriver ):
         self.driver = driver
-        self.details_url = urljoin(config.URL,path)
-        self.prev_url = None
+        self.base_url = (config.URL)
+        self.prev_url = driver.current_url
 
         self.button_selector = (By.CSS_SELECTOR ,"a.btn.btn-default.addDownloadedBook")
         
         self.download_button: WebElement | None = None
 
-    def load(self):
+    def load(self, * , details_url: str):
         ''' saves current url and loads/sends driver to details page '''
-        self.prev_url = self.driver.current_url
-        self.driver.get(self.details_url)
+        full_url = urljoin(self.base_url, details_url)
+        self.driver.get(full_url)
       
     def _locate_download_button(self):
         # XXX might really need to do waits here
@@ -55,4 +55,30 @@ class ResultDetailPage:
             raise e
         
 
+    def _get_title(self) -> str:
+        title_xpath = "//h1[@itemprop= 'name']"
+        try:
+            title_container = self.driver.find_element(By.XPATH,title_xpath)
+            title_text = title_container.text
+        except NoSuchElementException as e:
+            raise ResultDetailPageError(
+                message="Unable to locate title container.",
+                action=".find_element(By.XPATH)",
+                selector=f"{title_xpath}"
+            ) from e
+        return title_text
     
+    def _get_author(self) -> str:
+        author_xpath = "//a[@class= 'color1'][@title='Find all the author\'s book']"
+        try:
+            author_container = self.driver.find_element(By.XPATH,author_xpath)
+            author_text = author_container.text
+        except NoSuchElementException as e:
+            raise ResultDetailPageError(
+                message="Unable to locate author container.",
+                action=".find_element(By.XPATH)",
+                selector=f"{author_xpath}"
+            ) from e
+        return author_text
+    
+    def get_results_details(self):
