@@ -53,6 +53,11 @@ async def book_bot(user: str, search: str, option: str):
         book_bot_status.updates(("Error", f"[Error] [Download] : {error_msg}"))
         return book_bot_status.get_json_output()
     
+    #if successful our error_msg isn't an error message
+    if job_status and isinstance(error_msg,dict):
+        job_data = error_msg
+        #process if we need it
+    
     if bot_webdriver and 'bot_webdriver' in locals():
         bot_webdriver.quit()
         

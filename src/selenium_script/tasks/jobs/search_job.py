@@ -51,7 +51,12 @@ class SearchJob:
             ) from e
         
     def perform_search(self) -> None:
-        try:
+        search_box = self._get_search_field_elem()
+        self._input_search_query(search_box)
+        self._initiate_search()
+        return
+        # let exceptions bubble up no need to re-raise unless context added
+        """ try:
             # get search box
             # enter query
             # click ( search )
@@ -62,4 +67,4 @@ class SearchJob:
         except SearchJobError as e:
             raise SearchJobError(
                 message="Failed to properly perform search",
-            ) from e
+            ) from e """

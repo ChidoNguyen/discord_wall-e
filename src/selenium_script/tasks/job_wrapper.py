@@ -5,8 +5,8 @@ from src.selenium_script.script_config import config_automation as config
 
 from src.selenium_script.tasks.jobs.search_job import SearchJob
 from src.selenium_script.tasks.jobs.result_job import result_job
-from src.selenium_script.tasks.jobs.acquire_job import acquire_job
-from src.selenium_script.tasks.jobs.pick_job import create_options_job, save_options_json
+from src.selenium_script.tasks.jobs.acquire_job import acquire_job,acquire_pick
+from src.selenium_script.tasks.jobs.option_job import create_options_job, save_options_json
 from src.selenium_script.exceptions.script_jobs import SearchJobError,ResultJobError, AcquireJobError
 from src.selenium_script.exceptions.search_results import SearchResultPageError
 from src.selenium_script.exceptions.result_detail import ResultDetailJobError
@@ -44,6 +44,28 @@ def _get_handle(driver : ChromeWebdriver, search_query: str , download_dir: str)
     
     if acquire_status:
         print(acquire_status)
+def lean_get_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
+    """
+    Executes the advanced search job pipeline: performs a search, processes results, and saves output to disk.
+
+    Args:
+        driver (ChromeWebdriver): Active Selenium driver instance.
+        search_query (str): Search query string to perform.
+        download_dir (str): Path to directory where output will be saved.
+
+    Raises:
+        SearchJobError: If the search task fails to execute.
+        ResultJobError: If result job tasks fails to execute.
+        Result
+    """
+    search_job = SearchJob(driver,search_query)
+    search_job.perform_search()
+    result_urls = result_job(driver)
+    acquire_job_status = acquire_job(driver=driver,download_dir=download_dir,results=result_urls)
+    if acquire_job_status:
+        print(acquire_job_status)
+    return
+    
 
 def _get_advance_handle(driver : ChromeWebdriver , search_query: str, download_dir:str):
     ''' Short circuits after search job , no need to acquire '''
@@ -72,9 +94,37 @@ def _get_advance_handle(driver : ChromeWebdriver , search_query: str, download_d
     
     return True
 
-def _pick_handle():
+def _get_adv_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
+    """
+    Executes the advanced search job pipeline: performs a search, processes results, and saves output to disk.
+
+    Args:
+        driver (ChromeWebdriver): Active Selenium driver instance.
+        search_query (str): Search query string to perform.
+        download_dir (str): Path to directory where output will be saved.
+
+    Raises:
+        SearchJobError: If the search task fails to execute.
+        ResultDetailJobError: If extracting results from the search page fails.
+        ResultDetailPageError: If selenium related interactions are failing.
+        SearchResultPageError: If validation of search results fails.
+        ChoiceCreationJobError: If options results are empty or could not be saved to file.
+    """
+    # search doesn't really have its own "page" since the search bar is live pretty much everywhere , just make a class wrapper for its role.
+
+    search_job = SearchJob(driver,search_query)
+    search_job.perform_search()
+    result_urls = result_job(driver)
+    options = create_options_job(driver=driver, results=result_urls)
+    save_options_json(processed_results=options,download_dir=download_dir)
+    return
+
+def _pick_handle(driver: ChromeWebdriver, details_url: str, download_dir: str):
     ''' Entry at acquire , doesnt run the first 2 jobs '''
-    pass
+    #big difference here is that search_query is actually the url directly to the details page
+    #skips the need to search and results straight to acquire
+    file_metadata = acquire_pick(driver=driver,download_dir=download_dir,details_url=details_url)
+    return
 
 def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: str, option: str):
     """
@@ -87,7 +137,13 @@ def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: 
         'getbook-adv' : _get_advance_handle,
         'pick' : _pick_handle
     }
-    
+    """
+    try:
+        job_status = option_handler_map[option](driver,search,download_dir)
+    except Exception as e:
+        return False, e
+    return True, job_status
+    """
     try:
         option_handler_map[option](driver,search,download_dir)
     except Exception as e:
