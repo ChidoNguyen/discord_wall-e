@@ -81,6 +81,7 @@ class ResultDetailPage:
             ) from e
         return author_text
     
+<<<<<<< HEAD
     def _build_data_detail(self) -> dict[str,str]:
         title = self._get_title()
         author = self._get_author()
