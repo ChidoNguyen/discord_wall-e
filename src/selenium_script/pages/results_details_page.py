@@ -81,11 +81,10 @@ class ResultDetailPage:
             ) from e
         return author_text
     
-<<<<<<< HEAD
     def _build_data_detail(self) -> dict[str,str]:
         title = self._get_title()
         author = self._get_author()
         return { 'link' : self.driver.current_url , 'author' : author , 'title' : title}
     
-    def get_results_details(self):
+    def get_results_details(self) -> dict[str,str]:
         return self._build_data_detail()

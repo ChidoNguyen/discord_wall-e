@@ -6,7 +6,7 @@ from src.selenium_script.script_config import config_automation as config
 from src.selenium_script.tasks.jobs.search_job import SearchJob
 from src.selenium_script.tasks.jobs.result_job import result_job
 from src.selenium_script.tasks.jobs.acquire_job import acquire_job
-from src.selenium_script.tasks.jobs.pick_job import create_options_job
+from src.selenium_script.tasks.jobs.pick_job import create_options_job, save_options_json
 from src.selenium_script.exceptions.script_jobs import SearchJobError,ResultJobError, AcquireJobError
 from src.selenium_script.exceptions.search_results import SearchResultPageError
 from src.selenium_script.exceptions.result_detail import ResultDetailJobError
@@ -63,8 +63,14 @@ def _get_advance_handle(driver : ChromeWebdriver , search_query: str, download_d
     try:
         options = create_options_job(driver=driver,results=result_urls)
     except:
-        pass
-    pass
+        raise
+    
+    try:
+        save_options_json(processed_results=options,download_dir=download_dir)
+    except:
+        raise
+    
+    return True
 
 def _pick_handle():
     ''' Entry at acquire , doesnt run the first 2 jobs '''

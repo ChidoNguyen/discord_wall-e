@@ -1,5 +1,6 @@
 import os
-
+import json
+from src.selenium_script.script_config import config_automation as config
 def create_user_save_dir(user: str) -> str:
     """
     Creates a directory named after the requester at environment defined base directory.
@@ -18,3 +19,9 @@ def create_user_save_dir(user: str) -> str:
         return user_folder_path
     except Exception as e:
         raise RuntimeError(f"Failed to create user save directory for '{user}' : {e}")
+
+def write_json_file(*,data: list , download_dir: str):
+    output_file = "results.json"
+    output_path = os.path.join(download_dir,output_file)
+    with open(output_path, 'w') as f:
+        json.dump(data,f,indent=4)
