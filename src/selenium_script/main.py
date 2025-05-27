@@ -50,12 +50,14 @@ async def book_bot(user: str, search: str, option: str):
     #Main "jobs" of the script
     job_status , error_msg = perform_script_option(driver=bot_webdriver, download_dir=user_download_dir, search=search,option=option)
     if not job_status:
-        book_bot_status.updates(("Error", f"[Error] [Download] : {error_msg}"))
+        book_bot_status.updates(("Error", f"[Error] [Script Job] : {error_msg}"))
         return book_bot_status.get_json_output()
     
     #if successful our error_msg isn't an error message
     if job_status and isinstance(error_msg,dict):
         job_data = error_msg
+        book_bot_status.set_status('success')
+        book_bot_status.updates(('message','script job success - '))
         #process if we need it
     
     if bot_webdriver and 'bot_webdriver' in locals():
@@ -67,8 +69,8 @@ async def book_bot(user: str, search: str, option: str):
 def cli_main():#
     user, search, option = parse_arg()
     result = asyncio.run(book_bot(user=user,search=search,option=option))
-    return result
+    return book_bot_status.get_json_output()
 
 if __name__ == '__main__':
-    cli_main()
+    print(cli_main())
 

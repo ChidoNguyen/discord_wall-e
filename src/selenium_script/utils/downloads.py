@@ -17,7 +17,7 @@ def get_folder_snapshot(*,user_folder: str, key: str = "") -> set:
 
     #need to filter out .tmp extension files#
     def is_valid_file(dir_entry: os.DirEntry):
-        return dir_entry.is_file() and not dir_entry.name.endswith('.tmp')
+        return dir_entry.is_file() and not (dir_entry.name.endswith('.tmp') or  ".com.google.Chrome." in dir_entry.name)
     
     if key == 'path':
         return {dir_item.path for dir_item in os.scandir(user_folder) if is_valid_file(dir_item)}
@@ -64,6 +64,7 @@ def _get_newest(*,download_path:str) -> str:
     all_files: set[os.DirEntry] = get_folder_snapshot(user_folder=download_path)
     #with os.path.. Can call "os.path.getctime()" on each entry being passed in as param
     # os.scandir entries, stat is a method of the class use lambda
+    print(all_files)
     newest_file = max(all_files, key= lambda f: f.stat().st_ctime)
     return newest_file.path if newest_file else ''
 

@@ -69,7 +69,7 @@ class ResultDetailPage:
         return title_text
     
     def _get_author(self) -> str:
-        author_xpath = "//a[@class= 'color1'][@title='Find all the author\'s book']"
+        author_xpath = '//a[@class= "color1"][@title="Find all the author\'s book"]'
         try:
             author_container = self.driver.find_element(By.XPATH,author_xpath)
             author_text = author_container.text

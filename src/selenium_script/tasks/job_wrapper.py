@@ -67,7 +67,7 @@ def lean_get_handle(driver: ChromeWebdriver, search_query: str, download_dir: st
     return
     
 
-def _get_advance_handle(driver : ChromeWebdriver , search_query: str, download_dir:str):
+def _dep_get_advance_handle(driver : ChromeWebdriver , search_query: str, download_dir:str):
     ''' Short circuits after search job , no need to acquire '''
     search_job = SearchJob(driver,search_query)
     try:
@@ -94,7 +94,7 @@ def _get_advance_handle(driver : ChromeWebdriver , search_query: str, download_d
     
     return True
 
-def _get_adv_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
+def _get_advance_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
     """
     Executes the advanced search job pipeline: performs a search, processes results, and saves output to disk.
 
