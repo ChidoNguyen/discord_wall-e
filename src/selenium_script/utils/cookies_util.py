@@ -10,7 +10,7 @@ from src.selenium_script.script_config import config_automation as config
 
 COOKIES_FILE = "session_state.pkl"
 
-def _is_valid(cookies: list[dict]) -> None:
+def _is_valid(cookies: list[dict]) -> bool:
     """ Checks if our session cookies need to be refreshed. """
     if not cookies:
         raise CookiesUtilityError(
@@ -25,44 +25,45 @@ def _is_valid(cookies: list[dict]) -> None:
             raise CookiesUtilityError(
                 message="Cookies are expired."
             )
-    return
+    return True
 
 def _inject_cookies(driver:ChromeWebdriver, cookies: list[dict]) -> None:
-    ''' injects cookies into our web driver instance '''
-    try:
-        for cookie in cookies:
-            driver.add_cookie(cookie)
-    except Exception as e:
-        raise CookiesUtilityError(
-            message="Failed to inject cookies into driver.",
-            action=".add_cookies(...)"
-        ) from e
+    ''' 
+    injects cookies into our web driver instance 
+
+    Args:
+        list containing our cookies, each cookie is a dictionary object.
+
+    Returns:
+        None
+    '''
+    for cookie in cookies:
+        driver.add_cookie(cookie)
 
 def _fetch_local_cookies() -> list[dict]:
-    ''' Reads in local saved script session cookies/info. '''
-    try:
-        cookies_path = os.path.join(config.COOKIES_DIR,COOKIES_FILE)
-        with open(cookies_path,'rb') as file:
-            session_data = pickle.load(file)
-        return session_data
-    except OSError as e:
-        raise RuntimeError("Could not open or locate cookies info file.") from e
-    except Exception as e:
-        raise RuntimeError("Could not load cookies.") from e
+    ''' 
+    Reads in local saved script session cookies/info. 
+    
+    Args: None
+
+    Returns:
+        list[dict] a list container of cookies (dict) values
+    '''
+    cookies_path = os.path.join(config.COOKIES_DIR,COOKIES_FILE)
+    with open(cookies_path,'rb') as file:
+        session_data = pickle.load(file)
+    return session_data
     
     
-def load_cookies(driver: ChromeWebdriver) -> tuple[bool , Exception |  None]:
+def load_cookies(driver: ChromeWebdriver) -> None:
     """ TASK : fetches local cookie info , verifies, and injects into webdriver 
     
-        Note : True/False for completion of cookies loading only.
     """
-    try:
-        session_data = _fetch_local_cookies()
-        _is_valid(session_data)
+    session_data = _fetch_local_cookies()
+    if _is_valid(session_data):
         _inject_cookies(driver,session_data)
-        return True, None
-    except Exception as e:
-        return False, e
+    
+    
 
 def save_cookies(driver: ChromeWebdriver) -> tuple[bool,Exception| None]:
     """ Saves  cookies we currently have in selenium chrome driver to a pickle file. """

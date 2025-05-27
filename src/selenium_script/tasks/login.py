@@ -24,7 +24,75 @@ def _account_pool(driver: ChromeWebdriver):
             message="Download limit reached"
         )
 
-def perform_login(driver : ChromeWebdriver) -> tuple[bool,Exception | None]:
+def _home_page_entry(driver:ChromeWebdriver):
+    """
+    Initializes our home_page UI handler.
+
+    Args: 
+        driver: chrome webdriver instance
+
+    Returns:
+        HomePage handler object
+    """
+    home = HomePage(driver)
+    return home , home.is_home_page()
+
+def _get_login_page_handler(driver: ChromeWebdriver, home_handler : HomePage) -> LoginPage:
+    login_page_url = home_handler.get_login_url()
+    driver.get(login_page_url)
+    login_page = LoginPage(driver)
+    login_page.is_login_page()
+    return login_page
+
+def _validate_cookie_login(driver: ChromeWebdriver, login_page: LoginPage):
+    
+    try:
+        login_page.valid_login()
+        driver.get(config.URL) # go back to home page
+    except LoginVerificationError:
+        return False, None
+    except Exception as e:
+        return False , e
+    return True, None
+
+def _login(driver: ChromeWebdriver, login_page: LoginPage):
+    login_page.login(config.ACCOUNTS[0],config.PASSWORD)
+    login_page.valid_login()
+
+def perform_login(driver:ChromeWebdriver):
+    home_page_handler , valid = _home_page_entry(driver)
+    if not valid:
+        return False , NoSuchElementException("Missing home page element identifiers.")
+
+    try:
+        login_page = _get_login_page_handler(driver, home_page_handler)
+    except Exception as e:
+        return False, e
+    
+    login_status , error_msg = _validate_cookie_login(driver,login_page)
+    if login_status:
+        return True, None
+    
+
+    # manual login and update cookies #
+    try:
+        _login(driver,login_page)
+    except (LoginVerificationError,LoginProcedureFailed) as e:
+        return False , e 
+    
+    try:
+        save_cookies(driver)
+    except CookiesUtilityError as e:
+        return False , e 
+    
+    return True ,None
+    
+    
+    
+
+
+
+def _depracated_perform_login(driver : ChromeWebdriver) -> tuple[bool,Exception | None]:
 
     # Home page check
     home = HomePage(driver)
@@ -54,7 +122,7 @@ def perform_login(driver : ChromeWebdriver) -> tuple[bool,Exception | None]:
 
     # automated manual logging in and refreshing our cookies
     try:
-        login_page.perform_login(config.ACCOUNTS[0],config.PASSWORD)
+        login_page.login(config.ACCOUNTS[0],config.PASSWORD)
         login_page.valid_login() #only save cookies if login is valid
         _account_pool(driver)
         # XXX PROBABLY NEED TO IMPLEMENT ACC CYCLING LATER 

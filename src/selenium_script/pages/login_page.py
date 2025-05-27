@@ -55,7 +55,7 @@ class LoginPage:
                 selector=f"logout xpath : {logout_xpath}"
             )
         
-    def perform_login(self,username:str,password:str):
+    def login(self,username:str,password:str):
         try:
             self._input_id(username)
             self._input_pass(password)

@@ -35,12 +35,12 @@ async def book_bot(user: str, search: str, option: str):
     bot_webdriver.get(config.URL)
 
     #Cookies
-    cookies_status , error_msg = load_cookies(bot_webdriver)
-    if error_msg: # instead of cookie status track error b/c loading cookies is a luxury, login/save if our cookies arent good to go.
-        #if needed we can log cause
-        #tmp = error_msg.__cause___ since we've been chaing exceptions up
-        book_bot_status.updates(("Error", f"[Error] [load_cookies] : {error_msg}")) 
-        print(book_bot_status.get_json_output())
+    try:
+        load_cookies(bot_webdriver)
+    except Exception as e:
+        # just a warning since load_cookies is more of a if it works cool less work, if not we'll login and get new cookies anyways
+        book_bot_status.updates(("Error", f"[Warning] [load_cookies] : missing expired cookies - {e}")) 
+        
     #Login 
     login_status , error_msg = perform_login(bot_webdriver)
     if not login_status:

@@ -145,7 +145,7 @@ def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: 
     return True, job_status
     """
     try:
-        option_handler_map[option](driver,search,download_dir)
+        job_status = option_handler_map[option](driver,search,download_dir)
     except Exception as e:
         return False , e 
-    return True , None
+    return True , job_status
