@@ -16,75 +16,73 @@ class ResultDetailPage:
         self.prev_url = driver.current_url
 
         self.button_selector = (By.CSS_SELECTOR ,"a.btn.btn-default.addDownloadedBook")
+        self.author_xpath = '//a[@class= "color1"][@title="Find all the author\'s book"]'
+        self.title_xpath = "//h1[@itemprop= 'name']"
+
         
-        self.download_button: WebElement | None = None
 
     def load(self, * , details_url: str):
         ''' saves current url and loads/sends driver to details page '''
         full_url = urljoin(self.base_url, details_url)
         self.driver.get(full_url)
+        if full_url != self.driver.current_url:
+            raise ResultDetailPageError(
+                message="Could not navigate to new url",
+                action="web driver .get() ",
+                selector=f"target url: [{full_url}]"
+            )
+        
       
     def _locate_download_button(self):
         # XXX might really need to do waits here
         try:
-            self.download_button = self.driver.find_element(*self.button_selector)
+            return self.driver.find_element(*self.button_selector)
         except NoSuchElementException as e:
             raise ResultDetailPageError(
                 message="Could not locate download button.",
                 action=f".find_element({self.button_selector[0]})",
                 selector=f"[{self.button_selector[1]}]"
             )
-    
-    
-    def _initiate_download(self):
-        if not self.download_button:
-            raise ResultDetailPageError(
-                message="Missing download button to initiate download.",
-                action="_initiate_download()"
-            )
-        self.download_button.click()
 
     
     def download(self):
         """ clicks the button """
-        try:
-            if not self.download_button:
-                self._locate_download_button()
-            self._initiate_download()
-        except ResultDetailPageError as e:
-            raise e
-        
+        download_button = self._locate_download_button()
+        download_button.click()
 
-    def _get_title(self) -> str:
-        title_xpath = "//h1[@itemprop= 'name']"
+    def _get_detail_text(self, by: str, value: str) -> str:
+        """ Re-usable .find_element wrapper to extract text.  Normalized the exception raising format template when elements are missing.
+        """
         try:
-            title_container = self.driver.find_element(By.XPATH,title_xpath)
-            title_text = title_container.text
+            detail_container = self.driver.find_element(by,value)
+            detail_text = detail_container.text
+            return detail_text
         except NoSuchElementException as e:
             raise ResultDetailPageError(
-                message="Unable to locate title container.",
-                action=".find_element(By.XPATH)",
-                selector=f"{title_xpath}"
+                message="Unable to locate detail's container.",
+                action="_get_detail_text()",
+                selector=f"By: {by} Value: {value}"
             ) from e
-        return title_text
+        
+    def _get_title(self) -> str:
+        return self._get_detail_text(By.XPATH,self.title_xpath)
     
     def _get_author(self) -> str:
-        author_xpath = '//a[@class= "color1"][@title="Find all the author\'s book"]'
-        try:
-            author_container = self.driver.find_element(By.XPATH,author_xpath)
-            author_text = author_container.text
-        except NoSuchElementException as e:
-            raise ResultDetailPageError(
-                message="Unable to locate author container.",
-                action=".find_element(By.XPATH)",
-                selector=f"{author_xpath}"
-            ) from e
-        return author_text
+        return self._get_detail_text(By.XPATH,self.author_xpath)
+    
+    def _get_field(self, identifier: str) -> str:
+        """ defaults xpath usage for getting field item's text"""
+        return self._get_detail_text(By.XPATH,identifier)
     
     def _build_data_detail(self) -> dict[str,str]:
-        title = self._get_title()
-        author = self._get_author()
-        return { 'link' : self.driver.current_url , 'author' : author , 'title' : title}
+        fields = {
+            'title' : self.title_xpath,
+            'author' : self.author_xpath
+        }
+        return { 
+            'link' : self.driver.current_url , 
+            **{ k : self._get_field(v) for k,v in fields.items()} # sets our key: value relation , and then expands
+        }
     
     def get_results_details(self) -> dict[str,str]:
         return self._build_data_detail()

@@ -18,17 +18,16 @@ def _get_details_page(*,driver: ChromeWebdriver, url: str):
     return details_page
 
 
-def acquire_pick(*,driver : ChromeWebdriver , download_dir: str, details_url: str) -> dict[str,str]:
+def acquire_job(*,driver : ChromeWebdriver , download_dir: str, details_url: str) -> dict[str,str]:
     details_page = _get_details_page(driver=driver,url = details_url)
     
     old_files = get_folder_snapshot(user_folder=download_dir,key="path")
     details_page.download()
 
-    if check_download_status(user_folder=download_dir,old_files=old_files):
-        return rename_download(download_path=download_dir)
-    return {}
+    check_download_status(user_folder=download_dir,old_files=old_files)
+    return rename_download(download_path=download_dir)
 
-def acquire_job(*,driver: ChromeWebdriver, download_dir: str,  results: list[str], url_idx : int = 0):
+def __acquire_job(*,driver: ChromeWebdriver, download_dir: str,  results: list[str], url_idx : int = 0):
     # should fully have a file at the end of script
 
     # Default idx is 0 for "top"/"first" result

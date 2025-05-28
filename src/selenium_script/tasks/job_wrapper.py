@@ -5,10 +5,10 @@ from src.selenium_script.script_config import config_automation as config
 
 from src.selenium_script.tasks.jobs.search_job import SearchJob
 from src.selenium_script.tasks.jobs.result_job import result_job
-from src.selenium_script.tasks.jobs.acquire_job import acquire_job,acquire_pick
+from src.selenium_script.tasks.jobs.acquire_job import acquire_job
 from src.selenium_script.tasks.jobs.option_job import create_options_job, save_options_json
-from src.selenium_script.exceptions.script_jobs import SearchJobError,ResultJobError, AcquireJobError
-from src.selenium_script.exceptions.search_results import SearchResultPageError
+from src.selenium_script.exceptions.script_jobs import ScriptJobRunnerError, SearchJobError,ResultJobError, AcquireJobError
+from src.selenium_script.exceptions.search_results import SearchResultPageError , NoSearchResultsError
 from src.selenium_script.exceptions.result_detail import ResultDetailJobError
 """
 Notes to self:
@@ -17,34 +17,14 @@ Notes to self:
 2 -> Search - > Result /end
 3 -> <...> /start Acquire 
 """
-def _get_handle(driver : ChromeWebdriver, search_query: str , download_dir: str):
-    """
-    Main script job gets top/first search result
-
-    Chains together Search -> Results -> Acquire jobs
-    """
-    # start the search
-    search_job = SearchJob(driver,search_query)
-    try:
-        search_job.perform_search()
-    except SearchJobError as e:
-        raise 
-    
-    # generate result info
-    try:
-        result_urls = result_job(driver)
-    except ResultJobError as e:
-        raise
-    
-    # acquire 
-    try:
-        acquire_status = acquire_job(driver=driver, download_dir=download_dir,results=result_urls)
-    except Exception as e:
-        raise
-    
-    if acquire_status:
-        print(acquire_status)
-def lean_get_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
+def _is_empty(data: list[str]):
+    if data is None:
+        raise NoSearchResultsError(
+            message="Empty list of results url.",
+            action="job_wrapper -> post search results processing"
+        )
+    return
+def _get_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
     """
     Executes the advanced search job pipeline: performs a search, processes results, and saves output to disk.
 
@@ -61,38 +41,11 @@ def lean_get_handle(driver: ChromeWebdriver, search_query: str, download_dir: st
     search_job = SearchJob(driver,search_query)
     search_job.perform_search()
     result_urls = result_job(driver)
-    acquire_job_status = acquire_job(driver=driver,download_dir=download_dir,results=result_urls)
-    if acquire_job_status:
-        print(acquire_job_status)
-    return
-    
-
-def _dep_get_advance_handle(driver : ChromeWebdriver , search_query: str, download_dir:str):
-    ''' Short circuits after search job , no need to acquire '''
-    search_job = SearchJob(driver,search_query)
-    try:
-        search_job.perform_search()
-    except SearchJobError as e:
-        raise 
-    
-    # generate result info
-    try:
-        result_urls = result_job(driver)
-    except ResultJobError as e:
-        raise
-
-    #### Need to output results ####
-    try:
-        options = create_options_job(driver=driver,results=result_urls)
-    except:
-        raise
-    
-    try:
-        save_options_json(processed_results=options,download_dir=download_dir)
-    except:
-        raise
-    
-    return True
+    _is_empty(result_urls) # guard to trigger an exception
+    #takes "top" result
+    get_url = result_urls[0]
+    file_metadata = acquire_job(driver=driver,download_dir=download_dir,details_url=get_url)
+    return file_metadata
 
 def _get_advance_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
     """
@@ -115,6 +68,7 @@ def _get_advance_handle(driver: ChromeWebdriver, search_query: str, download_dir
     search_job = SearchJob(driver,search_query)
     search_job.perform_search()
     result_urls = result_job(driver)
+    _is_empty(result_urls)
     options = create_options_job(driver=driver, results=result_urls)
     save_options_json(processed_results=options,download_dir=download_dir)
     return
@@ -123,10 +77,10 @@ def _pick_handle(driver: ChromeWebdriver, details_url: str, download_dir: str):
     ''' Entry at acquire , doesnt run the first 2 jobs '''
     #big difference here is that search_query is actually the url directly to the details page
     #skips the need to search and results straight to acquire
-    file_metadata = acquire_pick(driver=driver,download_dir=download_dir,details_url=details_url)
-    return
+    file_metadata = acquire_job(driver=driver,download_dir=download_dir,details_url=details_url)
+    return file_metadata
 
-def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: str, option: str):
+def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: str, option: str) -> tuple[bool, Exception | dict | None]:
     """
     Entry point for core jobs of script. Will delegate and invoke the proper job to function correlation.
     """
@@ -137,15 +91,8 @@ def perform_script_option(*,driver: ChromeWebdriver, download_dir: str, search: 
         'getbook-adv' : _get_advance_handle,
         'pick' : _pick_handle
     }
-    """
     try:
         job_status = option_handler_map[option](driver,search,download_dir)
     except Exception as e:
-        return False, e
-    return True, job_status
-    """
-    try:
-        job_status = option_handler_map[option](driver,search,download_dir)
-    except Exception as e:
-        return False , e 
+        return False,e 
     return True , job_status

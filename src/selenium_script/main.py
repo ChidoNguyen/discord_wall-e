@@ -63,14 +63,13 @@ async def book_bot(user: str, search: str, option: str):
     if bot_webdriver and 'bot_webdriver' in locals():
         bot_webdriver.quit()
         
-    return
+    return book_bot_status.get_json_output()
     
 
 def cli_main():#
     user, search, option = parse_arg()
     result = asyncio.run(book_bot(user=user,search=search,option=option))
-    return book_bot_status.get_json_output()
-
+    return result
 if __name__ == '__main__':
     print(cli_main())
 

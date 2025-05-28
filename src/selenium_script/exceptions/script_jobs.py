@@ -12,3 +12,6 @@ class AcquireJobError(SeleniumBaseException):
     def __post_init__(self):
         self.module = "AcquireJob"
         
+class ScriptJobRunnerError(SeleniumBaseException):
+    def __post_init__(self):
+        self.module = "JobWrapper"
