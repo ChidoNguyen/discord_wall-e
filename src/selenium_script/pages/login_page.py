@@ -5,12 +5,14 @@ from selenium.common.exceptions import NoSuchElementException
 
 from src.selenium_script.exceptions.login_page import LoginPageElementNotFound, LoginProcedureFailed,LoginVerificationError
 class LoginPage:
+    """ Handles all login UI related elements to faciliate the logic code. """
     login_form: WebElement
 
     def __init__(self,driver: ChromeWebdriver):
         self.driver = driver
 
     def is_login_page(self) -> bool:
+        """ Verifies login page as current url/view """
         # XXX Need a better check ###
         login_form_tag = 'form'
         try:
@@ -24,6 +26,7 @@ class LoginPage:
             )
     
     def _input_id(self,user_id: str) -> None:
+        """ Automates entry of email into designated field. """
         try:
             self.login_form.find_element(By.NAME, 'email').send_keys(user_id)
         except NoSuchElementException:
@@ -34,6 +37,7 @@ class LoginPage:
             )
     
     def _input_pass(self, password: str):
+        """ Automates entry of password into designated field. """
         try:
             self.login_form.find_element(By.NAME, 'password').send_keys(password)
         except NoSuchElementException:
@@ -43,7 +47,8 @@ class LoginPage:
                 selector= "password"
             )
         
-    def valid_login(self) -> bool:
+    def _is_valid_login(self) -> bool:
+        """ Verifies login procedure success or failure. """
         logout_xpath = "//a[@href='/logout']"
         try:
             self.driver.find_element(By.XPATH,logout_xpath)
@@ -54,23 +59,18 @@ class LoginPage:
                 action="find element by XPATH",
                 selector=f"logout xpath : {logout_xpath}"
             )
-        
+    
+    def valid_login(self) -> bool:
+        """ Verifies login is successful based on target identifiers. """
+        return self._is_valid_login()
+    
     def login(self,username:str,password:str):
-        try:
-            self._input_id(username)
-            self._input_pass(password)
-            self.login_form.find_element(By.TAG_NAME,'button').click()
-        except LoginPageElementNotFound as e:
-            raise LoginProcedureFailed(
-                message= f"{e}",
-                action='performing login logic'
-            ) from e
-        except NoSuchElementException as e:
-            raise LoginProcedureFailed(
-                message="Could not locate form submission button",
-                action="find element and click",
-                selector="button"
-            ) from e
+        """ chains together automated actions to perform login. """
+        self._input_id(username)
+        self._input_pass(password)
+        self.login_form.find_element(By.TAG_NAME,'button').click()
+
+        #moving exception catchers to parent code that invokes "tasks"
 
         
 

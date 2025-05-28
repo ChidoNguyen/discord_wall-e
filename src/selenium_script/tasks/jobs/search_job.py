@@ -9,6 +9,7 @@ Input Search Query is main job to get to "results" landing for next job role
 """
 
 class SearchJob:
+    """ Search itself does not have a 'page' to be listed under pages. Treated as a job/task instead but still wrapped into class for better context management. """
     def __init__(self, driver: ChromeWebdriver, search_query: str, max_result: int = 10):
         self.driver = driver
         self.max_results = max_result
@@ -21,6 +22,7 @@ class SearchJob:
         }
 
     def _get_search_field_elem(self) -> WebElement:
+        """ Locates the search input container. """
         try:
             return self.driver.find_element(By.XPATH, self.search_xpath['search_field'])
         except NoSuchElementException as e:
@@ -31,6 +33,7 @@ class SearchJob:
             ) from e
         
     def _input_search_query(self, input_field: WebElement) -> None:
+        """ Automates entry of search query. """
         try:
             input_field.send_keys(self.search_query)
         except Exception as e:
@@ -40,6 +43,7 @@ class SearchJob:
             ) from e
         
     def _initiate_search(self) -> None:
+        """ Automates clicking search button. """
         try:
             search_button = self.driver.find_element(By.XPATH, self.search_xpath['search_button'])
             search_button.click()
@@ -51,20 +55,9 @@ class SearchJob:
             ) from e
         
     def perform_search(self) -> None:
+        """ Automates the logic of intiating a search query. """
         search_box = self._get_search_field_elem()
         self._input_search_query(search_box)
         self._initiate_search()
         return
-        # let exceptions bubble up no need to re-raise unless context added
-        """ try:
-            # get search box
-            # enter query
-            # click ( search )
-            search_box = self._get_search_field_elem()
-            self._input_search_query(search_box)
-            self._initiate_search()
-            return
-        except SearchJobError as e:
-            raise SearchJobError(
-                message="Failed to properly perform search",
-            ) from e """
+
