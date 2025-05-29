@@ -1,26 +1,52 @@
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
 
-from src.selenium_script.script_config import config_automation as config
-
+#page/ui handler
 from src.selenium_script.pages.search_results_page import SearchResultPage
 
-from src.selenium_script.exceptions.script_jobs import ResultJobError
-from src.selenium_script.exceptions.search_results import SearchResultPageError
-
-
-### Results landing page  handler ###
-### Core job -> aggregate search results ###
 def _process_result_container(result_page: SearchResultPage, data: list[WebElement]) -> list[WebElement]:
-    # filter down our data to valid results only
+    """ 
+    Filters clist of container web elements
+    
+    Args:
+        result_page: UI/Page class handler
+        data (list[WebElement]): list of WebElements
+    
+    Returns:
+        list[WebElement]
+    
+    Raises:
+        SearchResultPageError - bubbled up from .verify_container() if fail 
+    """
     return [ container for container in data if result_page.verify_container(container)]
 
 def _extract_container_url(result_page: SearchResultPage, data: list[WebElement]) -> list[str]:
+    """ Extracts url from list of WebElements.
+    
+        Returns:
+            list[str]
+
+        Raises:
+            SearchResultPageError - bubbled up from .extract_url() if fail
+    """
     return [ result_page.extract_url(container) for container in data ]
 
 def result_job(driver: ChromeWebdriver) -> list[str]:
+    """
+    Leaned out logic flow to perform `result_job`.
+
+    Args:
+        driver (ChromeWebDriver): Instance of web driver
+
+    Returns:
+        list[str] containing urls related to valid search results
+    
+    Raises:
+        All Errors are allowed to bubble up from lower level function calls. Handled in the `task layer` handlers.
+
+        SearchResultPageError
+
+    """
     result_page = SearchResultPage(driver)
     result_page.is_results_page()
     result_page.locate_search_results_containers()

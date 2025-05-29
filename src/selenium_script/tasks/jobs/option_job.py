@@ -1,8 +1,5 @@
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 
-#config
-from src.selenium_script.script_config import config_automation as config
-
 #utils
 from src.selenium_script.utils.util import write_json_file
 
@@ -11,7 +8,6 @@ from src.selenium_script.pages.results_details_page import ResultDetailPage
 
 #exceptions
 from src.selenium_script.exceptions.pick_choice import ChoiceCreationJobError
-from src.selenium_script.exceptions.result_detail import ResultDetailPageError
 
 
 def create_options_job(*,driver: ChromeWebdriver, results: list[str], max_result : int = 10) -> list[dict[str,str]]:

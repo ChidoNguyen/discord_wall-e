@@ -17,13 +17,21 @@ Notes to self:
 2 -> Search - > Result /end
 3 -> <...> /start Acquire 
 """
+
 def _is_empty(data: list[str]):
+    """ 
+    Guard against empty lists. Portions/options of script requires non-empty data list of url(s) string. 
+    
+    Raises:
+        NoSearchResultsError if empty
+    """
     if data is None:
         raise NoSearchResultsError(
             message="Empty list of results url.",
             action="job_wrapper -> post search results processing"
         )
     return
+
 def _get_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
     """
     Executes the advanced search job pipeline: performs a search, processes results, and saves output to disk.
@@ -36,7 +44,13 @@ def _get_handle(driver: ChromeWebdriver, search_query: str, download_dir: str):
     Raises:
         SearchJobError: If the search task fails to execute.
         ResultJobError: If result job tasks fails to execute.
-        Result
+        NoSearchResultError: If no valid results for script to proceed.
+        RuntimeError : If download polling tasks time out.
+        ResultDetailJobError: If extracting results from the search page fails.
+        ResultDetailPageError: If selenium related interactions are failing.
+        EpubToolsError : If metadata extraction error.
+        DownloadUtilError: If file monitoring for new item and/or rename fails.
+        OSError: If os methods fail.
     """
     search_job = SearchJob(driver,search_query)
     search_job.perform_search()
@@ -74,8 +88,22 @@ def _get_advance_handle(driver: ChromeWebdriver, search_query: str, download_dir
     return
 
 def _pick_handle(driver: ChromeWebdriver, details_url: str, download_dir: str):
-    ''' Entry at acquire , doesnt run the first 2 jobs '''
-    #big difference here is that search_query is actually the url directly to the details page
+    """
+    Executes the pick option of the selenium script. URL is provided, script skips straight into acquisition phase.
+
+    Args:
+        driver (ChromeWebdriver): Active Selenium driver instance.
+        search_query (str): Search query string to perform.
+        download_dir (str): Path to directory where output will be saved.
+
+    Raises:
+        ResultDetailJobError: If extracting results from the search page fails.
+        ResultDetailPageError: If selenium related interactions are failing.
+        RuntimeError : If download polling tasks time out.
+        EpubToolsError : If metadata extraction error.
+        DownloadUtilError: If file monitoring for new item and/or rename fails.
+        OSError: If os methods fail.
+    """    #big difference here is that search_query is actually the url directly to the details page
     #skips the need to search and results straight to acquire
     file_metadata = acquire_job(driver=driver,download_dir=download_dir,details_url=details_url)
     return file_metadata

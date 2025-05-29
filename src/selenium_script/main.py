@@ -1,7 +1,5 @@
 import asyncio
 
-from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
-
 from src.selenium_script.utils.script_status import book_bot_status
 from src.selenium_script.utils.cli_util import parse_arg, direct_script_arg_validation
 from src.selenium_script.utils.webdriver_setup import setup_webdriver

@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import NoSuchElementException
 
-from src.selenium_script.exceptions.login_page import LoginPageElementNotFound, LoginProcedureFailed,LoginVerificationError
+from src.selenium_script.exceptions.login_page import LoginPageElementNotFound,LoginVerificationError
 class LoginPage:
     """ Handles all login UI related elements to faciliate the logic code. """
     login_form: WebElement

@@ -3,7 +3,9 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
-from src.selenium_script.exceptions.homepage import LoginElementNotFound , LoginRedirectFailed
+#exceptions
+from src.selenium_script.exceptions.homepage import LoginElementNotFound
+#config
 from src.selenium_script.script_config import config_automation as config
 
 class HomePage:

@@ -2,11 +2,11 @@ from urllib.parse import urljoin
 
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 
+#Exceptions
 from selenium.common.exceptions import NoSuchElementException
 from src.selenium_script.exceptions.result_detail import ResultDetailPageError
-
+#config
 from src.selenium_script.script_config import config_automation as config
 # XXX MIGHT NEED TO DO HUGE WAIT STUFF HERE XXX #
 class ResultDetailPage:

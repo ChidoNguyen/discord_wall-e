@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import NoSuchElementException
 
-
+#ui handler
 from src.selenium_script.exceptions.search_results import SearchResultPageError
 
 class SearchResultPage:

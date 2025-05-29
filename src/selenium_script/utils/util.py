@@ -1,6 +1,5 @@
 import os
 import json
-from src.selenium_script.script_config import config_automation as config
 def create_user_save_dir(user: str) -> str:
     """
     Creates a directory named after the requester at environment defined base directory.
