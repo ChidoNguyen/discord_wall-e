@@ -64,7 +64,7 @@ async def book_bot(user: str, search: str, option: str):
         bot_webdriver.quit()
         
     return book_bot_status.get_json_output()
-    
+    #format output text results
 
 def cli_main():#
     user, search, option = parse_arg()
