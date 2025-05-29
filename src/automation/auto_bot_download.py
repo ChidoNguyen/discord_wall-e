@@ -1,3 +1,4 @@
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,7 +10,7 @@ import shutil
 from src.automation.auto_bot_util import _get_download_metadata
 from src.automation.book_bot_output import book_bot_status
 
-def _rename_book_file(user_folder):
+def _rename_book_file(user_folder: str) -> bool:
     """
     Function : Renames a book file
     
@@ -47,7 +48,7 @@ def _rename_book_file(user_folder):
     return True
 
 
-def _check_download_progress(user_folder, timeout_limit = 60):
+def _check_download_progress(user_folder: str , timeout_limit: int = 60) -> bool:
     """
     Function : Checks for when file download is completed
     
@@ -70,7 +71,7 @@ def _check_download_progress(user_folder, timeout_limit = 60):
     
     return download_complete
 
-def _download_attempt(bot_webdriver, link_url, user_folder):
+def _download_attempt(bot_webdriver: ChromeWebDriver, link_url: str, user_folder: str) -> ChromeWebDriver | None :
     """
     Function : Initiates the file download attempt
     
@@ -104,7 +105,7 @@ def _download_attempt(bot_webdriver, link_url, user_folder):
             return bot_webdriver
     return None
 
-def start_download(bot_webdriver,user_folder,url):
+def start_download(bot_webdriver,user_folder,url) -> ChromeWebDriver | None:
     """
     Function : Wrapper function to start the full download process
     

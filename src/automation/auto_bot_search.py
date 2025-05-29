@@ -1,3 +1,4 @@
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from .book_bot_config import url as site_url
@@ -8,7 +9,7 @@ XPATH = {
         's_field' : "//input[@id= 'searchFieldx']",
         's_button' : "//button[@type= 'submit' and @aria-label='Search']"
     }
-def _search_query_input(bot_webdriver, search_query):
+def _search_query_input(bot_webdriver : ChromeWebdriver, search_query : str) -> ChromeWebdriver | None:
     """
     Function : Automates the input of our search string into search input field
     
@@ -35,7 +36,7 @@ def _search_query_input(bot_webdriver, search_query):
     
     return bot_webdriver
 
-def _get_search_result(bot_webdriver):
+def _get_search_result(bot_webdriver : ChromeWebdriver) -> tuple[ChromeWebdriver,list[str]] | None:
     """
     Function : Extracts our search results max results set via global variable
     
@@ -58,11 +59,19 @@ def _get_search_result(bot_webdriver):
     try:
         for items in search_results:
             book_details = items.find_element(By.TAG_NAME, book_deets['book_card'])
-            bd_lang = book_details.get_attribute('language').lower()
-            bd_extension = book_details.get_attribute('extension').lower()
-            if bd_lang == 'english' and bd_extension == 'epub' :
-                full_link_path = site_url + book_details.get_attribute('href')[1:] # removing starting / from href
-                valid_links.append(full_link_path)
+            if book_details:
+                bd_lang = book_details.get_attribute('language')
+                if bd_lang:
+                    bd_lang = bd_lang.lower()
+                bd_extension = book_details.get_attribute('extension')
+                if bd_extension:
+                    bd_extension = bd_extension.lower()
+                if bd_lang == 'english' and bd_extension == 'epub':
+                    link_value = book_details.get_attribute('href')
+                    if link_value:
+                        link_value = link_value[1:]
+                        full_link_path = site_url + link_value # removing starting / from href
+                        valid_links.append(full_link_path)
     except Exception as e:
         book_bot_status.updates(('Error',f'Error - Link Extraction {e}'))
         #print(f'Error: {e} \nBook search link extraction failed.')
@@ -82,5 +91,7 @@ def bot_search(bot_webdriver, search_query):
     Returns : tuple(webdriver,List(str)) or None
     """
     search_outcome = _search_query_input(bot_webdriver,search_query)
-    return _get_search_result(search_outcome)
+    if search_outcome:
+        return _get_search_result(search_outcome)
+    return None
    

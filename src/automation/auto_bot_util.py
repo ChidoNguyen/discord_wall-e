@@ -1,12 +1,18 @@
 import os
 import json
 import re
+
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeWebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
-from src.automation.book_bot_output import book_bot_status
+from selenium.common.exceptions import NoSuchElementException , NoSuchAttributeException
+
 from ebooklib import epub
-####ebooklib future/user warning ######
 import warnings
+
+from src.automation.book_bot_output import book_bot_status
+
+####ebooklib future/user warning ######
 warnings.filterwarnings(
     'ignore', 
     message = 'In the future version we will turn default option ignore_ncx to True.', 
@@ -18,7 +24,7 @@ warnings.filterwarnings(
     category=FutureWarning
     )
 ######
-def _navigate_download_history(bot_webdriver):
+def _navigate_download_history(bot_webdriver: ChromeWebDriver) -> ChromeWebDriver | None:
     """
     Function : Navigate to our target sites download history
     
@@ -26,24 +32,27 @@ def _navigate_download_history(bot_webdriver):
 
     Returns : webdriver or None
     """
+    # Dict if we ever need to expand on
+    #LIMIT_XPATH = {
+    #    "download_history" : "//a[@href='/users/downloads']"
+    #}
+    
 
-    LIMIT_XPATH = {
-        "download_history" : "//a[@href='/users/downloads']"
-    }
+    xpath_download_limit = "//a[@href='/users/downloads']"
+    
     try:
-        click_link = bot_webdriver.find_element(By.XPATH , LIMIT_XPATH["download_history"])
-        href_link = click_link.get_attribute('href')
+        download_history_elem: WebElement = bot_webdriver.find_element(By.XPATH,xpath_download_limit)
+        download_history_url = download_history_elem.get_attribute('href')
+        if not download_history_url:
+            book_bot_status.updates(('Error', "[Error] [DL_History_URL] : No URL found."))
+            return None
+        bot_webdriver.get(download_history_url)
     except NoSuchElementException as e:
-        book_bot_status.updates(('Error',f'Error - Navigate DL History Link {e}'))
-        #print(e)
-    try:
-        bot_webdriver.get(href_link)
-    except Exception as e:
-        book_bot_status.updates(('Error',f'Error - Re-direct to DL History {e}'))
-        #print("Download history failed to follow URL.")
+        book_bot_status.updates(('Error', f"[Error] [Navigate Download History] : {e}"))
+        return None
     return bot_webdriver
 
-def _check_download_limit(bot_webdriver):
+def _check_download_limit(bot_webdriver: ChromeWebDriver) -> bool:
     """
     Function : Checks to see if we have hit download limit
     
@@ -51,17 +60,17 @@ def _check_download_limit(bot_webdriver):
 
     Returns : bool
     """
+    css_out_of_ten = 'div.m-v-auto.d-count'
+    target_out_of_ten_text = "10/10"
     try:
-        out_of_ten = bot_webdriver.find_element(By.CSS_SELECTOR , 'div.m-v-auto.d-count')
+        out_of_ten_elem = bot_webdriver.find_element(By.CSS_SELECTOR , css_out_of_ten)
+        if out_of_ten_elem.text.strip() == target_out_of_ten_text:
+            return True
     except NoSuchElementException as e:
-        book_bot_status.updates(('Error',f'Error - Missing Download Limit Element {e}'))
-        #print(e)
-    str_limit = out_of_ten.text
-    if str_limit == "10/10":
-        return True
+        book_bot_status.updates(('Error',f'Error - Missing Download Limit Element {e}'))  
     return False
 
-def _check_max_limit(bot_webdriver):
+def _check_max_limit(bot_webdriver: ChromeWebDriver) -> bool:
     """
     Function : Wrapper function to navigate and check download limit
     
@@ -69,7 +78,10 @@ def _check_max_limit(bot_webdriver):
 
     Returns : bool
     """
+    #saved to go back to#
     homepage_url = bot_webdriver.current_url
+    
+
     down_limit = _check_download_limit(_navigate_download_history(bot_webdriver))
     bot_webdriver.get(homepage_url)
     return down_limit
@@ -115,7 +127,7 @@ def _get_download_metadata(target_file : str):
     
     Arguments : target_file - str - full path to file
 
-    Returns : dictionary with keys author/title and value associated to them
+    Returns : dictionary with keys author/title and value associated to them [lname,fname,title]
     """
     literature = epub.read_epub(target_file)
     lit_author = literature.get_metadata('DC','creator')[0][0]

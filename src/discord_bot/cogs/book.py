@@ -6,7 +6,11 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import View, Button
 
-from typing import Callable , Awaitable , Optional , Union
+from typing import Callable , Awaitable , Optional , TypeGuard , Protocol
+'''
+Type guard to help with pylance static type hinting
+Protocol to use kwarg in function handler signature
+'''
 
 from json import JSONDecodeError
 from ..utils import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
@@ -28,7 +32,7 @@ class BookOptions(View):
 
     """
     def __init__(self, 
-                 cog : Union["Book",commands.Cog], #commands.Cog, 
+                 cog : "Book", #commands.Cog, 
                  links: list, 
                  interaction : discord.Interaction,
                  *,
@@ -66,7 +70,7 @@ class BookOptions(View):
         cancel_button = ButtonEmbeddedLink(
             cog=self.cog,
             label='X',
-              user_option = None,
+              user_option = "",
               parent_view=self,
               style=discord.ButtonStyle.danger
               )
@@ -102,7 +106,7 @@ class ButtonEmbeddedLink(Button):
     """
     def __init__(
             self,
-            cog : Union["Book" , commands.Cog], 
+            cog : "Book", #change if you feel like changing cog name
             label : str , 
             user_option : str ,  
             parent_view : BookOptions,
@@ -127,7 +131,10 @@ class ButtonEmbeddedLink(Button):
         #everything else
         await og_resp.edit(content="<In Progress>",view=self.parent_view)
         
-        pick_status = await self.cog._book_cog_post_handle(interaction,self.cog.api_routes['pick'],data_payload=[self.user_option,""],book_command_handler=self._handle_pick)
+        pick_status = await self.cog._book_cog_post_handle(
+            interaction,self.cog.api_routes['pick'],
+            data_payload=[self.user_option,""],book_command_handler=self._handle_pick
+            )
         if not pick_status:
             self.parent_view.clear_items()
             await og_resp.edit(content="Pick failed verify info.",view = self.parent_view)
@@ -144,7 +151,7 @@ class ButtonEmbeddedLink(Button):
         await original_response.edit(content='```Canceled```', view=self.parent_view)
         self.parent_view.stop() # maybe?
     
-    async def _handle_pick(self,*,interaction : discord.Interaction = None, original_response : discord.InteractionMessage = None, username : str) -> bool:
+    async def _handle_pick(self,*,interaction : discord.Interaction |None = None, original_response : discord.InteractionMessage | None = None, username : str) -> bool:
         file_status = await discord_file_creation(username)
         if self.cog._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
@@ -153,6 +160,16 @@ class ButtonEmbeddedLink(Button):
             return True
         return False
          
+class BookCommandHandler(Protocol):
+    ''' Needed for kwarg usage with our generic function post request handler '''
+    def __call__(
+            self,
+            *,
+            interaction : discord.Interaction,
+            original_response : discord.InteractionMessage,
+            username : str
+    ) -> Awaitable[bool]:
+        ...
 class Book(commands.Cog):
     """
     Class Book : our extension/cog - Does things I want it to do
@@ -208,22 +225,15 @@ class Book(commands.Cog):
 
 #######
     @staticmethod
-    def _verify_discord_file(results : tuple) -> bool:
+    def _verify_discord_file(results : tuple[discord.File | None, str | None]) -> TypeGuard[tuple[discord.File,str]]:
         """ 
             Verifies the return values of _discord_file_creation()
             Expect a two value tuple - (a,b):
                 a - expected to be discord.File object
                 b - file path to the source file (str)
         """
-        if (
-            results is not None
-            and isinstance(results,tuple)
-            and len(results) == 2
-            and isinstance(results[0],discord.File)
-            and isinstance(results[1], str)
-        ):
-            return True
-        return False
+        return results[0] is not None and results[1] is not None
+
     
     """
     Cog Specific Callable Handler:
@@ -246,7 +256,7 @@ class Book(commands.Cog):
         search_results = await book_search_output(username)
 
         if not search_results:
-            await original_response.edit("Nothing found.")
+            await original_response.edit(content="Nothing found.")
             return False
         
         option_view = BookOptions(self,search_results,interaction)
@@ -284,18 +294,16 @@ class Book(commands.Cog):
             interaction : discord.Interaction,
             task_route : str,
             data_payload : list,
-            book_command_handler : Callable[[discord.Interaction, discord.InteractionMessage,str],Awaitable[bool]],
-            root_url : str = None
+            book_command_handler : BookCommandHandler,
+            root_url : str | None = None
     ) -> bool:
         if root_url is None :
             root_url = self.api
-        try:
-            username = sanitize_username(interaction.user.name)
-            original_response = await interaction.original_response()
-            request_url = root_url + task_route
-            data = self.json_payload(user=username,title = data_payload[0],author = data_payload[1])
-        except Exception as e:
-            print(f'before post - {e}')
+
+        username = sanitize_username(interaction.user.name)
+        original_response = await interaction.original_response()
+        request_url = root_url + task_route
+        data = self.json_payload(user=username,title = data_payload[0],author = data_payload[1])
         try:
             async with self.cog_api_session.post(request_url,json=data) as response :
                 if response.status == 200:
@@ -309,7 +317,7 @@ class Book(commands.Cog):
             print(f"A client error occurred - {task_route}: {e}")
         except Exception as e:
             print(f"An unexpected error occured - {task_route}: {e}")
-        await original_response.edit(content=f"```Try again later... and I mean later later.```")
+        await original_response.edit(content="```Try again later... and I mean later later.```")
         return False
 
     async def _book_cog_get_handle(
@@ -317,7 +325,7 @@ class Book(commands.Cog):
             interaction : discord.Interaction,
             task_route : str,
             book_command_handler : Callable[...,Awaitable[bool]],
-            root_url : str = None
+            root_url : str | None = None
     ) -> bool:
         if not root_url:
             root_url = self.api

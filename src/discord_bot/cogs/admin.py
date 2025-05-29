@@ -57,8 +57,9 @@ class AdminPanel(commands.Cog):
             
     
     @refresh_book_cog.error
+    @kill_book.error
     @killswitch.error
-    async def unauthorized_error(interaction: discord.Interaction,error):
+    async def unauthorized_error(self,interaction: discord.Interaction,error):
         if isinstance(error,CheckFailure):
             await interaction.response.send_message("You have no power here." , ephemeral=True,delete_after=15)
         
