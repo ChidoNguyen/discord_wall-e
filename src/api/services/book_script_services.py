@@ -10,36 +10,54 @@ from src.selenium_script.main import book_bot
 #exception
 from src.api.utils.book_route_util import ScriptServiceExceptionError
 
-async def find_service(*,search_query: UnknownBook, user:UserDetails,option: str = "getbook"):
-    script_options = build_script_options(search_query=search_query, user=user, option=option)
+async def service_script_handler(*,search_query: UnknownBook, user: UserDetails, option: str):
+    """
+    Service wrapper for book related api services.
 
-    #helps not block api#
-    script_result = await coroutine_runner(book_bot,user=script_options['user'], search=script_options['search'],option=option)
+    Logic code is the same, changes based on options. Script wrapper will build dict of required kwargs option changes as needed. But this allows all service route to call same code block.
 
-    try:
-        return parse_script_result(script_result)
-    except ScriptServiceExceptionError as e:
-        #log here maybe , pre placed just incase
-        print(e)
-    return None
-    
-async def find_hardmode_service(*,search_query: UnknownBook, user: UserDetails, option: str = "getbook-adv"):
-    script_options = build_script_options(search_query=search_query, user=user, option=option)
-    script_result = await coroutine_runner(book_bot,user=script_options['user'], search=script_options['search'],option=option)
-    try:
-        return parse_script_result(script_result)
-    except ScriptServiceExceptionError as e:
-        print(e)
-    return None
-
-async def pick_service(*,search_query: UnknownBook, user: UserDetails, option: str = "pick"):
-    script_options = build_script_options(search_query=search_query, user=user, option=option)
-    script_result = await coroutine_runner(book_bot,user=script_options['user'], search=script_options['search'],option=option)
+    Args:
+        search_query (UnknownBook): Pydantic model used for request validation and data parsing
+        user (UserDetails): ^
+        option (str): Used to leverage different script tasks 
+    """
+    script_options= build_script_options(search_query=search_query,user=user,option=option)
+    script_result= await coroutine_runner(book_bot,**script_options)
     try:
         return parse_script_result(script_result)
     except ScriptServiceExceptionError as e:
         print(e)
-    return None
+    return
+
+async def find_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook'):
+    """
+    Run the standard book search service.
+
+    Args:
+        search_query (UnknownBook): Validated search query data.
+        user (UserDetails): User details for request context.
+        option (str, optional): Script option flag. Defaults to 'getbook'.
+
+    Returns:
+        Parsed result from the script handler or None on failure.
+    """
+    return await service_script_handler(search_query=search_query, user=user, option=option)
+
+async def find_hardmode_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook-adv'):
+    """
+    Run the advanced book search service.
+
+    Args and Returns: same as `find_service`.
+    """
+    return await service_script_handler(search_query=search_query, user=user, option=option)
+
+async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'pick'):
+    """
+    Run the pick service for selecting books.
+
+    Args and Returns: same as `find_service`.
+    """
+    return await service_script_handler(search_query=search_query, user=user, option=option)
 
 async def catalog_service():
     return None
