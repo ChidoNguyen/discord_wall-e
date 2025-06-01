@@ -1,7 +1,12 @@
 import json
 from dataclasses import dataclass
-
+import os
+import shutil
+#config
+from src.env_config import config
 from src.api.models.book_model import UnknownBook , UserDetails
+#util
+from src.api.utils.db_util import insert_database
 
 @dataclass
 class ScriptServiceExceptionError(Exception):
@@ -56,3 +61,49 @@ def parse_script_result(result) -> dict:
             message="Could not parse script result.",
             action="json.loads()",
         )
+
+def _load_task_info(file_path: str) -> dict[str,str]:
+    with open(file_path, 'r') as f:
+        return json.load(f)
+def _move_to_vault(file_details: dict[str,str]):
+    title = file_details.get('title')
+    fname = file_details.get('fname')
+    lname = file_details.get('lname')
+    source = file_details.get('source', None)
+
+    author = f"{fname} {lname}".strip() 
+    new_file_path = os.path.join(config.THE_VAULT,'the_goods')
+    new_file_name = os.path.join(new_file_path, f"{title} by {author}.epub")
+    if source is not None and os.path.exists(source):
+        new_path = shutil.move(source,new_file_name)
+        return new_path
+    return None
+
+async def _register_file(job_details: dict[str,str]):
+    #add to db AND move to vault
+    try:
+        await insert_database(job_details=job_details)
+    except Exception as e:
+        print(e)
+    
+    try:
+        file_location = _move_to_vault(job_details)
+    except Exception as e:
+        print(e)
+    return 1,1
+
+async def _add_to_catalog(file_path: str):
+    #to add to catalog:
+    #1) load info 
+    #2) register witho ur database
+    #3) delete job 
+    job_info = _load_task_info(file_path=file_path)
+    job_result , job_data = await _register_file(job_info)
+    return
+async def overtime_jobs():
+    #check OTJob folder and attempt to run it
+    todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
+
+    for tasks in todo_list:
+        await _add_to_catalog(tasks)
+    return

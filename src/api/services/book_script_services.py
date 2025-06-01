@@ -1,5 +1,3 @@
-import json
-
 #models
 from src.api.models.book_model import UnknownBook, UserDetails
 #utils
@@ -60,4 +58,7 @@ async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:st
     return await service_script_handler(search_query=search_query, user=user, option=option)
 
 async def catalog_service():
+    # -> run any outstanding 'db jobs'
+    # -> gets our catalog info
+    
     return None
