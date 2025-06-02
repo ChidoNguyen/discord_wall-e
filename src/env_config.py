@@ -23,12 +23,13 @@ class Config:
     THE_VAULT: str 
     THE_JOBS: str
     API_ENDPOINT: str 
-    THE_GOODS: str 
+    THE_GOODS: str
+    CACHE_FOLDER: str
     #########################################
     REQUIRED_ENV_VARS = [
         'DISCORD_TOKEN', 'ADMIN_ID', 'JANITORS', 'PERSONAL_TEST',
         'DOWNLOAD_DIR', 'DB_PATH', 'THE_VAULT', 'THE_JOBS',
-        'API_ENDPOINT', 'THE_GOODS'
+        'API_ENDPOINT', 'THE_GOODS', 'CACHE_FOLDER'
     ]
     #pretty much any ID related discord stuff
     REQUIRED_INT_VARS = [

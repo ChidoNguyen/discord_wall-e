@@ -44,23 +44,15 @@ def build_script_options(*,search_query: UnknownBook , user: UserDetails, option
         "option" : option
     }
 
-def parse_script_result(result) -> dict:
+def format_script_result(result: tuple[bool,str]) -> dict:
     # need to refine script out 
     #assume dict for now ..
-    try:
-        result_info = json.loads(result)
-        if result_info.get('status') == 'success':
-            return {
-                'message' : result_info.get('message'),
-                'metadata' : result_info.get('metadata')
-            }
-        return {}
-    except Exception as e:
-        raise ScriptServiceExceptionError(
-            module="API_Book_Utils",
-            message="Could not parse script result.",
-            action="json.loads()",
-        )
+    status , data = result
+    return {
+        'success' : status,
+        'payload' : data
+    }
+        
 
 def _load_task_info(file_path: str) -> dict[str,str]:
     with open(file_path, 'r') as f:
@@ -84,26 +76,27 @@ async def _register_file(job_details: dict[str,str]):
     try:
         await insert_database(job_details=job_details)
     except Exception as e:
-        print(e)
+        return None
     
     try:
         file_location = _move_to_vault(job_details)
     except Exception as e:
-        print(e)
-    return 1,1
+        return None
+    return file_location
 
-async def _add_to_catalog(file_path: str):
+async def add_to_catalog(file_path: str):
     #to add to catalog:
     #1) load info 
     #2) register witho ur database
     #3) delete job 
     job_info = _load_task_info(file_path=file_path)
-    job_result , job_data = await _register_file(job_info)
-    return
-async def overtime_jobs():
+    return await _register_file(job_info)
+    
+def clean_job_listing(*, job_file : str, new_file_path:str):
+    if new_file_path and os.path.exists(new_file_path):
+        os.remove(job_file)
+    
+async def overtime_jobs() -> list[str]:
     #check OTJob folder and attempt to run it
     todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
-
-    for tasks in todo_list:
-        await _add_to_catalog(tasks)
-    return
+    return todo_list

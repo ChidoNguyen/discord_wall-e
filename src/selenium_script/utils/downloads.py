@@ -5,6 +5,8 @@ import shutil
 from src.selenium_script.utils import epub_util
 
 from src.selenium_script.exceptions.util_tools import DownloadUtilError, EpubToolsError
+
+from src.selenium_script.utils.script_status import book_bot_status
 #user_folder: str = ""
 
 # download related util :
@@ -113,6 +115,7 @@ def rename_download(*,download_path: str) -> dict[str,str]:
     
     try:
         _rename_file(download_dir= download_path,file_path=target_file_path,data=file_metadata)
+        book_bot_status.add_metadata(file_metadata)
         return file_metadata
     except Exception as e:
         raise DownloadUtilError(message="Could not rename file.",action="_rename_file(...)") from e
