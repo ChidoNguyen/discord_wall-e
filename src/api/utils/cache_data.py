@@ -44,31 +44,55 @@ def write_cache_data(data: CacheResult):
     except (FileNotFoundError, json.JSONDecodeError) as e:
         return None
     
-def _cache_key_check(data:str):
+def _cache_key_check(data:dict):
+    ''' Checks our cache loaded data has the 2 required keys. '''
     required_key = ['mtime', 'data']
     if not all(key in data for key in required_key):
         return False
     return True
-def _cache_map_check(data:str):
+
+def _cache_map_check(data:dict):
+    """ Verifies the existence of required keys for the dictionary stored in the read-in cache data key `data` """
     required_map_keys= ['id_map', 'id_list']
     if not all(key in data for key in required_map_keys):
         return False
     return True
-def read_cache_data():
+
+def read_cache() -> dict:
     cache_data_path = os.path.join(config.CACHE_FOLDER,cache_file_name)
     try:
         with open(cache_data_path, 'r') as f:
             raw_data = json.load(f)
+            return raw_data
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        return None
+        return {}
     
+def verify_cache_structure(data:dict):
+    """ verify all keys are present """
+    return _cache_key_check(data) and _cache_map_check(data['data'])
 
-    return
-def get_cache_data(json_transfer:bool = True):
-    current_cache_data = read_cache_data()
+def verify_cache(data: dict) -> bool:
+    return verify_cache_structure(data) and data['mtime']>= os.path.getmtime(config.THE_GOODS)
 
+def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
+    """
+    Fetches the cache data for the catalog.
+
+    Args:
+        json_transfer (bool): Defaults True -> used to return a formatted dictionary of our cache data. If false return our fetched data in its raw form with custom dataclasses `CacheResult` which has `FileInfo`.
+    """
+
+    #chatgpt rec for future changes flexibility
+    #leaves room for not being tied into "data" key 
+    def to_dict(cache_data:dict):
+        return asdict(cache_data['data']) if json_transfer else cache_data
+    
+    current_cache_data = read_cache()
+    if verify_cache(current_cache_data):
+        return to_dict(current_cache_data)
+    
     #rebuild if bad data
     new_cache_data  = build_new_cache()
     write_cache_data(new_cache_data)
 
-    return None
+    return to_dict({'data': new_cache_data})
