@@ -1,3 +1,4 @@
+import asyncio
 import json
 from dataclasses import dataclass
 import os
@@ -54,11 +55,11 @@ def format_script_result(result: tuple[bool,str]) -> dict:
     }
         
 
-def _load_task_info(file_path: str) -> dict[str,str]:
+def load_task_info(file_path: str) -> dict[str,str]:
     """ Read in task information. """
     with open(file_path, 'r') as f:
         return json.load(f)
-def _move_to_vault(file_details: dict[str,str]) -> str | None:
+def move_to_vault(file_details: dict[str,str]) -> str:
     """ 
     Move item to the vault. 
     
@@ -75,48 +76,24 @@ def _move_to_vault(file_details: dict[str,str]) -> str | None:
     if source is not None and os.path.exists(source):
         new_path = shutil.move(source,new_file_name)
         return new_path
-    return None
+    return ""
 
-async def _register_file(job_details: dict[str,str]) -> str | None:
-    """ Attempts to register it into our database and then moves to the vault. """
-    #add to db AND move to vault
-    try:
-        await insert_database(job_details=job_details)
-    except Exception as e:
-        return None
     
-    try:
-        file_location = _move_to_vault(job_details)
-    except Exception as e:
-        return None
-    return file_location
-
-async def add_to_catalog(file_path: str):
-    #to add to catalog:
-    #1) load info 
-    #2) register witho ur database
-    #3) delete job 
-    job_info = _load_task_info(file_path=file_path)
-    return await _register_file(job_info)
-    
-def clean_job_listing(*, job_file : str, new_file_path:str):
+def clean_job_listing(*, job_file : str, new_file_path:str =""):
     """ removes the job_file if job is done """
     if new_file_path and os.path.exists(new_file_path):
         os.remove(job_file)
     
-async def check_overtime() -> list[str]:
+def check_overtime() -> list[str]:
     #check OTJob folder and attempt to run it
     todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
     return todo_list
 
-async def overtime_jobs() -> list[str]:
+async def overtime_jobs():
     """
     Checks our overtime folder aka any outstanding tasks that should be executed to give most up to date content. tasks is file i/o behaviours.
     """
-    extra_pay_listings = await check_overtime()
-    for task in extra_pay_listings:
-        new_file_path = await add_to_catalog(task)
-        if new_file_path is not None:
-            clean_job_listing(job_file=task, new_file_path=new_file_path)
-
-    return []
+    extra_pay_listings = await asyncio.to_thread(check_overtime)
+    if extra_pay_listings:
+        await asyncio.to_thread(insert_database,all_jobs=extra_pay_listings)
+    return

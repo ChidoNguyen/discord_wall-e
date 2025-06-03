@@ -63,7 +63,8 @@ async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:st
     """
     return await service_script_handler(search_query=search_query, user=user, option=option)
 
-async def catalog_service():
+async def catalog_service() -> dict:
     """ Snapshot of what we have on hand. """
     await overtime_jobs()
-    return {'catalog' : fetch_catalog_cache(json_transfer=True)}
+    catalog_data = await fetch_catalog_cache(json_transfer=True)
+    return {'catalog' : catalog_data}

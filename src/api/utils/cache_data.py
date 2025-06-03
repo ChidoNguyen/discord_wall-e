@@ -1,12 +1,13 @@
 import os
 import json
+import asyncio
 from dataclasses import dataclass, fields, asdict
 from typing import Mapping
 
 #config
 from src.env_config import config
 #util
-from src.api.utils.db_util import retrieve_table_data, build_FileInfo, FileInfo, DB_FIELDS
+from src.api.utils.db_util import retrieve_table_data, build_FileInfo, FileInfo
 cache_file_name = 'cache_info.json'
 
 @dataclass
@@ -74,7 +75,7 @@ def verify_cache_structure(data:dict):
 def verify_cache(data: dict) -> bool:
     return verify_cache_structure(data) and data['mtime']>= os.path.getmtime(config.THE_GOODS)
 
-def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
+async def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
     """
     Fetches the cache data for the catalog.
 
@@ -92,7 +93,7 @@ def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
         return to_dict(current_cache_data)
     
     #rebuild if bad data
-    new_cache_data  = build_new_cache()
+    new_cache_data  = await asyncio.to_thread(build_new_cache)
     write_cache_data(new_cache_data)
 
     return to_dict({'data': new_cache_data})
