@@ -7,7 +7,6 @@ import shutil
 from src.env_config import config
 from src.api.models.book_model import UnknownBook , UserDetails
 #util
-from src.api.utils.db_util import insert_database
 
 @dataclass
 class ScriptServiceExceptionError(Exception):
@@ -88,12 +87,3 @@ def check_overtime() -> list[str]:
     #check OTJob folder and attempt to run it
     todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
     return todo_list
-
-async def overtime_jobs():
-    """
-    Checks our overtime folder aka any outstanding tasks that should be executed to give most up to date content. tasks is file i/o behaviours.
-    """
-    extra_pay_listings = await asyncio.to_thread(check_overtime)
-    if extra_pay_listings:
-        await asyncio.to_thread(insert_database,all_jobs=extra_pay_listings)
-    return

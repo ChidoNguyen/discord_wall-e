@@ -8,6 +8,9 @@ from src.api.utils.book_route_util import load_task_info, move_to_vault, clean_j
 DB_FIELDS = ('id','title','author_first_name','author_last_name')
 @dataclass
 class FileInfo:
+    """
+    Custom dataclass to store id , title , fname ( author first name), lname ( authoer last name). Used in conjection with another custom data class to related file `id` with its `FileInfo` object.
+    """
     id: int
     title: str
     fname: str

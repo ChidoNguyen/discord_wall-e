@@ -1,8 +1,9 @@
+import asyncio
 #models
 from src.api.models.book_model import UnknownBook, UserDetails
 #utils
-from src.api.utils.book_route_util import build_script_options , format_script_result , overtime_jobs
-
+from src.api.utils.book_route_util import build_script_options , format_script_result , check_overtime
+from src.api.utils.db_util import insert_database
 from src.api.utils.cache_data import fetch_catalog_cache
 
 from src.api.utils.thread_helper import coroutine_runner
@@ -62,6 +63,18 @@ async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:st
     Args and Returns: same as `find_service`.
     """
     return await service_script_handler(search_query=search_query, user=user, option=option)
+
+async def overtime_jobs():
+    """
+    Checks our overtime folder aka any outstanding tasks that should be executed to give most up to date content. tasks is file i/o behaviours.
+    """
+    try:
+        extra_pay_listings = await asyncio.to_thread(check_overtime)
+        if extra_pay_listings:
+            await asyncio.to_thread(insert_database,all_jobs=extra_pay_listings)
+    except Exception as e:
+        print(f"bad jobs {e}")
+    return
 
 async def catalog_service() -> dict:
     """ Snapshot of what we have on hand. """

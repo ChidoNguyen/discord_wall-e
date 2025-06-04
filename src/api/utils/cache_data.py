@@ -75,6 +75,44 @@ def verify_cache_structure(data:dict):
 def verify_cache(data: dict) -> bool:
     return verify_cache_structure(data) and data['mtime']>= os.path.getmtime(config.THE_GOODS)
 
+def rebuild_cache(data_payload: dict) -> CacheResult:
+    """ rebuild our cache data_payload into custom dataclasses for script/bot usage. """
+
+    '''
+    Top Layer -> {mtime : ... , 'data' : ...}
+    Data Layer -> { id_map : ... , id_list : ...}
+    Item_map -> { int : <data we're rebuilding> } 
+
+    data_payload['id_map'].items() gets us to the item_map level
+    full expansion of the values inside to fill FileInfo and relate it to its own id value
+
+    id_list lets CacheResult provide all the possible id values possible in separate data member so user can do a dict look up as needed.
+    '''
+
+    #**v yields id/title/fname/lname
+    raw_id_map = {
+        int(k) : FileInfo(**v) for (k,v) in data_payload['id_map'].items()
+    }
+    processed_data = CacheResult(id_map=raw_id_map, id_list=data_payload['id_list'])
+
+    return processed_data
+def ensure_cache_data(cache_data:dict) -> CacheResult:
+    """ 
+    Returns cache data for things we have on hand. 
+
+    Helper function to keep fetch_catalog_cache clean. ensure_cache_data will verify integerity of existing cache data and return. If it requires updating, will query database for new data and rebuild cache, save , and return new data.
+    Args:
+        data (dict): the contents of our cache.json file
+
+    Returns:
+        instance of our custom dataclass CacheResult
+    """
+    if verify_cache(cache_data):
+        return rebuild_cache(cache_data['data'])
+    new_cache_data = build_new_cache()
+    write_cache_data(new_cache_data)
+    return new_cache_data
+
 async def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
     """
     Fetches the cache data for the catalog.
@@ -85,15 +123,13 @@ async def fetch_catalog_cache(json_transfer:bool = True) -> dict | CacheResult:
 
     #chatgpt rec for future changes flexibility
     #leaves room for not being tied into "data" key 
-    def to_dict(cache_data:dict):
-        return asdict(cache_data['data']) if json_transfer else cache_data
+    def to_dict(cache_data: CacheResult):
+        return asdict(cache_data) if json_transfer else cache_data
     
-    current_cache_data = read_cache()
-    if verify_cache(current_cache_data):
-        return to_dict(current_cache_data)
+    try:
+        current_cache_data = read_cache()
+        return to_dict(ensure_cache_data(current_cache_data))
+    except Exception as e:
+        print(f"bad cache stuff: {e}")
     
-    #rebuild if bad data
-    new_cache_data  = await asyncio.to_thread(build_new_cache)
-    write_cache_data(new_cache_data)
-
-    return to_dict({'data': new_cache_data})
+    return {}
