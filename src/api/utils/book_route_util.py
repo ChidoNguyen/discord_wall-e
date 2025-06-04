@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from dataclasses import dataclass
 import os
 import shutil
@@ -87,3 +88,11 @@ def check_overtime() -> list[str]:
     #check OTJob folder and attempt to run it
     todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
     return todo_list
+
+def create_database_job(data:dict):
+    #takes the file metadata generated from script
+    username = data.get('username')
+    job_file_name = f"{username}_book_{int(time.time())}.json"
+    with open(os.path.join(config.THE_JOBS,job_file_name), 'w') as f:
+        json.dump(data,f)
+    return job_file_name
