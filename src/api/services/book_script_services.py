@@ -2,7 +2,7 @@ import asyncio
 #models
 from src.api.models.book_model import UnknownBook, UserDetails
 #utils
-from src.api.utils.book_route_util import build_script_options , format_script_result , check_overtime
+from src.api.utils.book_route_util import build_script_options , format_script_result , check_overtime, create_database_job
 from src.api.utils.db_util import insert_database
 from src.api.utils.cache_data import fetch_catalog_cache
 
@@ -27,9 +27,16 @@ async def service_script_handler(*,search_query: UnknownBook, user: UserDetails,
     '''
     book_bot selenium script returns json formatted script status that was tracked during script execution. 'status' will have success if done properly
     '''
+
+    # tuple treated as status,msg (bool,json output)
     script_result= await coroutine_runner(book_bot,**script_options)
     try:
-        return format_script_result(script_result)
+        response_msg = format_script_result(script_result)
+        if option in ['getbook','pick']:
+            #script response_msg[]
+            metadata = response_msg['payload']
+            create_database_job(metadata)
+        return response_msg
     except ScriptServiceExceptionError as e:
         print(e)
     return

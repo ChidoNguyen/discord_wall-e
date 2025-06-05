@@ -59,6 +59,7 @@ async def book_bot(user: str, search: str, option: str) -> tuple[bool,str]:
         if isinstance(job_result,dict):
             book_bot_status.set_status('success')
             book_bot_status.updates(('message','script job success'))
+            book_bot_status.add_user(user)
             #process if we need it
             
         return True, book_bot_status.get_json_output()

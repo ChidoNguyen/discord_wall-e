@@ -43,5 +43,6 @@ class BookScriptStatus:
     
     def add_metadata(self,data: dict[str,str]) -> None:
         self.output['metadata'] = data
-
+    def add_user(self, user:str):
+        self.output['metadata']['username'] = user
 book_bot_status = BookScriptStatus()

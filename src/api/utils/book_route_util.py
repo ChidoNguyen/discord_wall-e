@@ -1,4 +1,3 @@
-import asyncio
 import json
 import time
 from dataclasses import dataclass
@@ -89,8 +88,14 @@ def check_overtime() -> list[str]:
     todo_list = [ entry.path for entry in os.scandir(config.THE_JOBS) if entry.is_file() and entry.name.endswith('.json')]
     return todo_list
 
-def create_database_job(data:dict):
+def create_database_job(str_data:str):
     #takes the file metadata generated from script
+    try:
+        payload = json.loads(str_data)
+    except Exception as e:
+        print(f"Bad json response in db job creation, {e}")
+        return
+    data = payload['metadata']
     username = data.get('username')
     job_file_name = f"{username}_book_{int(time.time())}.json"
     with open(os.path.join(config.THE_JOBS,job_file_name), 'w') as f:
