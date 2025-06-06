@@ -77,10 +77,24 @@ def move_to_vault(file_details: dict[str,str]) -> str:
         return new_path
     return ""
 
+def delete_duplicate(file_details: dict[str,str]):
+    """ Used with DB tools , deletes file if already existing in vault. """
+
+    source = file_details['source']
+    try:
+        if os.path.isfile(source):
+            os.remove(source)
+            return "delete_delete" # just my own personal flag
+    except Exception as e:
+        print(f"bad delete {e}")
+    return ""
+
     
 def clean_job_listing(*, job_file : str, new_file_path:str =""):
     """ removes the job_file if job is done """
-    if new_file_path and os.path.exists(new_file_path):
+    #gate check for a good delete
+    #can't remove new_file_path none check due to confirmation of a good move to vault, we want to save our files until its moved.
+    if new_file_path == "delete_delete" or new_file_path and os.path.exists(new_file_path):
         os.remove(job_file)
     
 def check_overtime() -> list[str]:

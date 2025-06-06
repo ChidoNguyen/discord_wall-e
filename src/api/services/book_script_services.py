@@ -12,7 +12,7 @@ from src.selenium_script.main import book_bot
 #exception
 from src.api.utils.book_route_util import ScriptServiceExceptionError
 
-async def service_script_handler(*,search_query: UnknownBook, user: UserDetails, option: str):
+async def service_script_handler(*,search_query: UnknownBook, user: UserDetails, option: str) -> dict:
     """
     Service wrapper for book related api services.
 
@@ -39,7 +39,7 @@ async def service_script_handler(*,search_query: UnknownBook, user: UserDetails,
         return response_msg
     except ScriptServiceExceptionError as e:
         print(e)
-    return
+    return {}
 
 async def find_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook'):
     """
@@ -55,7 +55,7 @@ async def find_service(*, search_query: UnknownBook, user: UserDetails,option:st
     """
     return await service_script_handler(search_query=search_query, user=user, option=option)
 
-async def find_hardmode_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook-adv'):
+async def find_hardmode_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook-adv') -> dict:
     """
     Run the advanced book search service.
 
@@ -63,7 +63,7 @@ async def find_hardmode_service(*, search_query: UnknownBook, user: UserDetails,
     """
     return await service_script_handler(search_query=search_query, user=user, option=option)
 
-async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'pick'):
+async def pick_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'pick') -> dict:
     """
     Run the pick service for selecting books.
 

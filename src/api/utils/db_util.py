@@ -3,7 +3,7 @@ import sqlite3
 #config
 from src.env_config import config
 #util
-from src.api.utils.book_route_util import load_task_info, move_to_vault, clean_job_listing
+from src.api.utils.book_route_util import load_task_info, move_to_vault, clean_job_listing, delete_duplicate
 #for id_map building w/o zipping and extracting cursor row factory
 DB_FIELDS = ('id','title','author_first_name','author_last_name')
 @dataclass
@@ -45,10 +45,11 @@ def insert_database(all_jobs: list[str]):
                 job.get('lname'),
                 job.get('user')
                 ))
+            inserted = db_cursor.rowcount > 0
+
             
-            if db_cursor.rowcount > 0:
-                new_file_path = move_to_vault(job)
-                clean_job_listing(job_file = job_details, new_file_path= new_file_path)
+            new_file_path = move_to_vault(job) if inserted else delete_duplicate(job)
+            clean_job_listing(job_file = job_details, new_file_path= new_file_path)
 
 
 def retrieve_table_data():

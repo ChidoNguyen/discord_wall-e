@@ -1,5 +1,5 @@
-from fastapi import APIRouter , BackgroundTasks
-from typing import Callable , Awaitable
+from fastapi import APIRouter, BackgroundTasks
+from typing import Callable, Awaitable, Any
 #models
 from src.api.models.book_model import UnknownBook, UserDetails
 #services
@@ -14,7 +14,7 @@ async def home():
 # just a note to self ... Callable type hinting Args,Returns
 #
 async def book_script_route_service_handler(
-        service_function: Callable[...,Awaitable],
+        service_function: Callable[...,Awaitable[dict[str,Any]]],
         background_tasks: BackgroundTasks,
         *args, **kwargs
 ):
@@ -26,10 +26,16 @@ async def book_script_route_service_handler(
         background_tasks (BackgroundTasks): handles our background tasks running
 
     """
+    #services that need BG_TASK map
+    # function to function relation can swap out who/what if needed.
+    background_task_map: dict[Callable,Callable] = {
+        find_service : overtime_jobs,
+        pick_service : overtime_jobs
+    }
     # service function signatures are all the same
     response = await service_function(*args,**kwargs)
-    if response.get('success'):
-        background_tasks.add_task(overtime_jobs)
+    if response.get('success', False) and service_function in background_task_map:
+        background_tasks.add_task(background_task_map[service_function])
     return response
 
 @book_script.post("/whisperfind")
@@ -40,12 +46,12 @@ async def find(search_query: UnknownBook, user: UserDetails , background_tasks: 
 
 
 @book_script.post("/find_hardmode")
-async def find_hardmode(search_query: UnknownBook, user: UserDetails):
-    return await find_hardmode_service(search_query=search_query,user=user)
+async def find_hardmode(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
+    return await book_script_route_service_handler(find_hardmode_service, background_tasks, search_query=search_query,user=user)
 
 @book_script.post("/pick")
-async def pick(search_query: UnknownBook, user: UserDetails):
-    return await pick_service(search_query=search_query,user=user)
+async def pick(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
+    return await book_script_route_service_handler(pick_service, background_tasks, search_query=search_query,user=user)
 
 @book_script.get("/catalog")
 async def catalog():
