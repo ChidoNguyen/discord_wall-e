@@ -9,8 +9,7 @@ from src.api.utils.cache_data import fetch_catalog_cache
 from src.api.utils.thread_helper import coroutine_runner
 #script
 from src.selenium_script.main import book_bot
-#exception
-from src.api.utils.book_route_util import ScriptServiceExceptionError
+
 
 async def service_script_handler(*,search_query: UnknownBook, user: UserDetails, option: str) -> dict:
     """
@@ -23,24 +22,13 @@ async def service_script_handler(*,search_query: UnknownBook, user: UserDetails,
         user (UserDetails): ^
         option (str): Used to leverage different script tasks 
     """
-    
-    script_options= build_script_options(search_query=search_query,user=user,option=option)
-    '''
-    book_bot selenium script returns json formatted script status that was tracked during script execution. 'status' will have success if done properly
-    '''
 
-    # tuple treated as status,msg (bool,json output)
+    script_options= build_script_options(search_query=search_query,user=user,option=option)
+    
     script_result= await coroutine_runner(book_bot,**script_options)
-    try:
-        response_msg = format_script_result(script_result)
-        if option in {'getbook','pick'}:
-            #script response_msg[]
-            metadata = response_msg['payload']
-            create_database_job(metadata)
-        return response_msg
-    except ScriptServiceExceptionError as e:
-        print(e)
-    return {}
+    #moved post processing to route layer wrapper
+    return script_result
+    
 
 async def find_service(*, search_query: UnknownBook, user: UserDetails,option:str = 'getbook'):
     """
