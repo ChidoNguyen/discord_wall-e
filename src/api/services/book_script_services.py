@@ -23,6 +23,7 @@ async def service_script_handler(*,search_query: UnknownBook, user: UserDetails,
         user (UserDetails): ^
         option (str): Used to leverage different script tasks 
     """
+    
     script_options= build_script_options(search_query=search_query,user=user,option=option)
     '''
     book_bot selenium script returns json formatted script status that was tracked during script execution. 'status' will have success if done properly
@@ -32,7 +33,7 @@ async def service_script_handler(*,search_query: UnknownBook, user: UserDetails,
     script_result= await coroutine_runner(book_bot,**script_options)
     try:
         response_msg = format_script_result(script_result)
-        if option in ['getbook','pick']:
+        if option in {'getbook','pick'}:
             #script response_msg[]
             metadata = response_msg['payload']
             create_database_job(metadata)
