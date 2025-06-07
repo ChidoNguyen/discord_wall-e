@@ -3,7 +3,10 @@ from typing import Callable, Awaitable, Any
 #models
 from src.api.models.book_model import UnknownBook, UserDetails
 #services
-from src.api.services.book_script_services import find_service, find_hardmode_service, pick_service, catalog_service , overtime_jobs
+from src.api.services.book_script_services import book_service_dispatch, find_service, find_hardmode_service, pick_service, catalog_service , overtime_jobs
+#utils
+from src.api.utils.book_route_util import format_script_response, format_script_result, create_database_job
+
 book_script = APIRouter()
 
 @book_script.get("/")
@@ -38,20 +41,56 @@ async def book_script_route_service_handler(
         background_tasks.add_task(background_task_map[service_function])
     return response
 
+async def book_script_route_handler(*, service: str, search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
+    background_task_map = {
+        "find" : overtime_jobs,
+        "pick" : overtime_jobs
+    }
+    #run our service dispatcher 
+    raw_service_response = await book_service_dispatch(
+        service=service,
+        search_query=search_query,
+        user=user
+    )
+    response = format_script_result(raw_service_response)
+    
+    #if service was good and needs post processing
+    if response.get('success', False) and service in {'find', 'pick'}:
+        #create a db job + attempt clean up
+        create_database_job(response['payload'])
+        background_tasks.add_task(background_task_map[service])
+
+    return format_script_response(response)
+
 @book_script.post("/whisperfind")
 @book_script.post("/find")
 async def find(search_query: UnknownBook, user: UserDetails , background_tasks: BackgroundTasks):
-    return await book_script_route_service_handler(find_service,background_tasks,search_query=search_query,user=user)
+    return await book_script_route_handler(
+        service='find',
+        search_query=search_query, 
+        user=user, 
+        background_tasks=background_tasks
+        )
 
 
 
 @book_script.post("/find_hardmode")
 async def find_hardmode(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
-    return await book_script_route_service_handler(find_hardmode_service, background_tasks, search_query=search_query,user=user)
+    return await book_script_route_handler(
+        service='find_hardmode',
+        search_query=search_query, 
+        user=user, 
+        background_tasks=background_tasks
+        )
 
 @book_script.post("/pick")
 async def pick(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
-    return await book_script_route_service_handler(pick_service, background_tasks, search_query=search_query,user=user)
+    return await book_script_route_handler(
+        service='pick',
+        search_query=search_query, 
+        user=user, 
+        background_tasks=background_tasks
+        )
 
 @book_script.get("/catalog")
 async def catalog():

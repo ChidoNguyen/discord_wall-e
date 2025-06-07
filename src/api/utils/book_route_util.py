@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 import os
 import shutil
+from fastapi.responses import JSONResponse
 #config
 from src.env_config import config
 from src.api.models.book_model import UnknownBook , UserDetails
@@ -18,6 +19,13 @@ class ScriptServiceExceptionError(Exception):
             f"[{self.module}] {self.message} |"
             f"{f'[Action] {self.action} |' if self.action else ''}"
         )
+
+def format_script_response(response: dict):
+    """ Builds the api response to send back to requester. """
+
+    if response.get('success', False):
+        return JSONResponse(status_code=200, content=response.get('payload', {}))
+    return JSONResponse(status_code=204, content={"details": "Nothing found"})
 
 def build_script_options(*,search_query: UnknownBook , user: UserDetails, option:str ) -> dict[str,str]:
     """
@@ -52,7 +60,7 @@ def format_script_result(result: tuple[bool,str]) -> dict:
         'success' : status,
         'payload' : data
     }
-        
+     
 
 def load_task_info(file_path: str) -> dict[str,str]:
     """ Read in task information. """
