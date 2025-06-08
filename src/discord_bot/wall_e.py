@@ -15,10 +15,7 @@ intents.guilds = True
 
 bot = commands.Bot(command_prefix='!',intents=intents)
 
-async def _load_cogs():
-    await bot.load_extension("src.discord_bot.cogs.book")
-    await bot.load_extension("src.discord_bot.cogs.help")
-    await bot.load_extension("src.discord_bot.cogs.admin")
+
 async def load_cogs():
     to_be_loaded = get_bot_cogs(cogs_path=config.DISCORD_COGS)
     if to_be_loaded:
