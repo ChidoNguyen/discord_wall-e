@@ -2,6 +2,8 @@ import os
 
 def _fetch_cogs(*,cogs_path: str) -> list[str]:
     """ gets us file names in cogs directory """
+    if not os.path.exists(cogs_path) or not os.path.isdir(cogs_path):
+        return []
     return [ entry.name[:-3] for entry in os.scandir(cogs_path) if entry.is_file() and "__init__" not in entry.name ]
     
 
