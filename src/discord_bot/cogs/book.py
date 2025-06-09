@@ -14,7 +14,7 @@ Protocol to use kwarg in function handler signature
 
 from json import JSONDecodeError
 from ..util import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
-from src.discord_bot.pagination import PaginatorView 
+from src.discord_bot.views.pagination import PaginatorView 
 
 from src.env_config import config
 
