@@ -7,12 +7,58 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import View, Button
 
+from typing import Callable
 #utils
 from src.discord_bot.utils.book_cog_util import discord_file_creation, tag_file_finish
 #prevents circular import since this is only suppose to be coupled with book_cogs
 if TYPE_CHECKING:
     from src.discord_bot.cogs.book import Book
 
+
+class BookButton(Button):
+    def __init__(self, label: str, user_option: str, on_click: Callable, style= discord.ButtonStyle.primary):
+        super().__init__(label=label, style=style)
+        self.user_option = user_option
+        self.on_click = on_click
+    
+    async def callback(self, interaction: discord.Interaction):
+        await self.on_click(interaction, self.user_option)
+
+
+#cogs pass down the call back handler function?
+class _BookOptions(View):
+    def __init__(self, links: list, on_option_click, timeout=120):
+        super().__init__(timeout=timeout)
+        self.links=links
+        self.on_option_click = on_option_click
+        self._create_buttons()
+        self.message: discord.Message | None
+        #add buttons
+    
+    async def on_timeout(self):
+        if not self.children:
+            return
+        self.clear_items()
+        if self.message:
+            await self.message.edit(content='```Expired```',view=self)
+        
+
+    def _create_buttons(self):
+        for (index, data) in enumerate(self.links, start= 1):
+            new_button = BookButton(
+                label= str(index),
+                user_option=data['link'],
+                on_click=self.on_option_click
+            )
+            self.add_item(new_button)
+            
+        #cancel button
+        self.add_item(BookButton(
+            label="X",
+            user_option="",
+            on_click=self.on_option_click
+        ))
+    
 class BookOptions(View):
     """
     Class : BookOptions -  Custom discord bot UI for handling interactions with search results.
