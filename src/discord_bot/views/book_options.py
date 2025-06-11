@@ -22,6 +22,7 @@ class BookButton(Button):
         self.on_click = on_click
     
     async def callback(self, interaction: discord.Interaction):
+        """ callable function passed down from parent cog to handle HTTP request in accordance to button option choice value. """
         await self.on_click(interaction, self.user_option)
 
 
@@ -58,6 +59,22 @@ class _BookOptions(View):
             user_option="",
             on_click=self.on_option_click
         ))
+
+    def _generate_option_message_text(self) ->list[str]:
+        """ create a text string per item to display. """
+        # 1. Title by Author [more info] generic style
+        return [f"{idx}. `Title<{data['title']}>` by `Author<{data['author']}>` [more info](<{data['link'].strip()}>)" for (idx,data) in enumerate(self.links,start=1) ]
+
+    def build_option_message_view(self):
+        """ Builds formatted text string to cleanly show options from user requests. """
+        title_text='Review and pick:'
+        try:
+            options_text = self._generate_option_message_text()
+            return '\n'.join([title_text,*options_text])
+        except Exception as e:
+            print(e)
+            pass
+
     
 class BookOptions(View):
     """
