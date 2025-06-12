@@ -36,10 +36,10 @@ async def book_script_route_handler(*, service: str, search_query: UnknownBook, 
 
 @book_script.post("/whisperfind")
 @book_script.post("/find")
-async def find(search_query: UnknownBook, user: UserDetails , background_tasks: BackgroundTasks):
+async def find(unknown_book: UnknownBook, user: UserDetails , background_tasks: BackgroundTasks):
     return await book_script_route_handler(
         service='find',
-        search_query=search_query, 
+        search_query=unknown_book, 
         user=user, 
         background_tasks=background_tasks
         )
@@ -47,19 +47,19 @@ async def find(search_query: UnknownBook, user: UserDetails , background_tasks: 
 
 
 @book_script.post("/find_hardmode")
-async def find_hardmode(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
+async def find_hardmode(unknown_book: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
     return await book_script_route_handler(
         service='find_hardmode',
-        search_query=search_query, 
+        search_query=unknown_book, 
         user=user, 
         background_tasks=background_tasks
         )
 
 @book_script.post("/pick")
-async def pick(search_query: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
+async def pick(unknown_book: UnknownBook, user: UserDetails, background_tasks: BackgroundTasks):
     return await book_script_route_handler(
         service='pick',
-        search_query=search_query, 
+        search_query=unknown_book, 
         user=user, 
         background_tasks=background_tasks
         )

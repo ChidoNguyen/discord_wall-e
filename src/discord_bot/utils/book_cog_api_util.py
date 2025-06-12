@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 #errors
 
 class BookApiClient:
-    def __init__(self,*,base_url: str, api_session: aiohttp.ClientSession | None):
+    def __init__(self,*,base_url: str, api_session: aiohttp.ClientSession | None = None):
         self.base_url = base_url
         if api_session is None:
             self.api_client = aiohttp.ClientSession()

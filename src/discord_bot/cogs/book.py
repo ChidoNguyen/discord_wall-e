@@ -13,6 +13,9 @@ Protocol to use kwarg in function handler signature
 '''
 
 from json import JSONDecodeError
+#util
+from src.discord_bot.utils.book_cog_api_util import BookApiClient
+from src.discord_bot.utils.book_cog_util import sanitize_username, build_book_cog_payload, discord_file_creation
 from ..util import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
 #views
 from src.discord_bot.views.pagination import PaginatorView 
@@ -48,6 +51,10 @@ class Book(commands.Cog):
         self.active_view : set[tuple[discord.ui.View, discord.Interaction]] = set() 
         self.cog_api_session = aiohttp.ClientSession()
         self.api = config.API_ENDPOINT
+        self.api_handler = BookApiClient(
+            base_url= config.API_ENDPOINT, 
+            api_session= self.cog_api_session
+            )
         self.api_routes = {
             'find' : '/find',
             'find_hardmode' : '/find_hardmode',
@@ -209,6 +216,30 @@ class Book(commands.Cog):
             await self._book_cog_post_handle(interaction,task_route=self.api_routes['find'],data_payload=[title,author],book_command_handler=self._find_handle)
         except Exception as e:
             print(e)
+        # new approach should flatten out the logic layering with same level function calls rather than calls within calls.
+        try:
+            # pre request requirements : payload and sanitation work
+            # api request
+            # response verification
+            # post processing for users
+
+            #prep work
+            username = sanitize_username(interaction.user.name)
+            request_payload = build_book_cog_payload(user=username,title=title,author=author)
+            #api call
+            response = self.api_handler.post_to_api(
+                end_point= self.api_routes['find'],
+                payload= request_payload
+            )
+            #TODO Might need a stricter file to user association if user ever decides to spam multiple finds at once
+            if response is not None:
+                #create file object and give user
+                discord_file = discord_file_creation(username)
+                pass
+
+            pass
+        except Exception as e:
+            pass
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')

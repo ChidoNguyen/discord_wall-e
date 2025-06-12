@@ -18,7 +18,7 @@ SERVICE_MAP = {
     "pick" : "pick"
 
 }
-VALID_SERVICE = set(SERVICE_MAP.values())
+VALID_SERVICE = set(SERVICE_MAP.keys())
 
 async def book_service_dispatch(*,service: str, search_query: UnknownBook, user: UserDetails) -> tuple[bool,str]:
     """
