@@ -27,7 +27,7 @@ def format_script_response(response: dict):
         return JSONResponse(status_code=200, content=response.get('payload', {}))
     return JSONResponse(status_code=204, content={"details": "Nothing found"})
 
-def build_script_options(*,search_query: UnknownBook , user: UserDetails, option:str ) -> dict[str,str]:
+def build_script_options(*,search_query: UnknownBook , user_details: UserDetails, option:str ) -> dict[str,str]:
     """
     Builds selenium script required arguments.
 
@@ -39,7 +39,7 @@ def build_script_options(*,search_query: UnknownBook , user: UserDetails, option
         dict[str,str]: keys are script required args `search`, `user`, `option`.
     """
     search_info = search_query.model_dump()
-    user_info = user.model_dump()
+    user_info = user_details.model_dump()
 
     author = search_info['author']
     title = search_info['title']

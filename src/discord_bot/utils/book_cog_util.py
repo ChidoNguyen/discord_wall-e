@@ -18,7 +18,7 @@ def build_book_cog_payload(*,user: str, title: str, author: str = "") -> dict[st
         {`unknown_book`: {`title`: ..., `author`: .. }, `user_details`: {`username`: ... }}
         
     """
-    unknown_book = {
+    search_query = {
         'title' : title,
         'author' : author
     }
@@ -26,7 +26,7 @@ def build_book_cog_payload(*,user: str, title: str, author: str = "") -> dict[st
     user_details = {'username' :  user}
 
     data = {
-        'unknown_book' : unknown_book,
+        'search_query' : search_query,
         'user_details' : user_details
     }
     return data
