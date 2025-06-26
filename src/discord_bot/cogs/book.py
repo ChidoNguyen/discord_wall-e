@@ -213,7 +213,6 @@ class Book(commands.Cog):
     async def find(self,interaction: discord.Interaction, title : str, author : str):
         try:
             await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
-            await self._book_cog_post_handle(interaction,task_route=self.api_routes['find'],data_payload=[title,author],book_command_handler=self._find_handle)
         except Exception as e:
             print(e)
         # new approach should flatten out the logic layering with same level function calls rather than calls within calls.
@@ -225,21 +224,14 @@ class Book(commands.Cog):
 
             #prep work
             username = sanitize_username(interaction.user.name)
-            request_payload = build_book_cog_payload(user=username,title=title,author=author)
-            #api call
-            response = self.api_handler.post_to_api(
-                end_point= self.api_routes['find'],
-                payload= request_payload
-            )
-            #TODO Might need a stricter file to user association if user ever decides to spam multiple finds at once
-            if response is not None:
-                #create file object and give user
-                discord_file = discord_file_creation(username)
-                pass
+        #api call
+            api_response = await self.api_handler.post_to_api(title=title,author=author,username=username,option='find')
 
-            pass
+            if api_response:
+                print(api_response)
         except Exception as e:
-            pass
+            print(e)
+        
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
