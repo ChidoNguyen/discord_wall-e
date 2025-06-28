@@ -224,13 +224,35 @@ class Book(commands.Cog):
 
             #prep work
             username = sanitize_username(interaction.user.name)
-        #api call
             api_response = await self.api_handler.post_to_api(title=title,author=author,username=username,option='find')
-
-            if api_response:
-                print(api_response)
+            if not api_response:
+                print("fail holder")
+            print("discord file attachment")
         except Exception as e:
             print(e)
+        """
+        async def on_find_success(username: str, api_response: dict):
+            file_info = extract_response_file_info(api_response)
+            if not file_info:
+                print("handle error later")
+                return
+            containing_folder , file_name = file_info
+            #verify folder and file later
+            print("invoke some verification later")
+            
+            ####
+
+            with open(os.path.join(containing_folder,file_name), 'rb') as file:
+                file_bytes = BytesIO(file.read())
+            file_bytes.seek(0) # set back to beginning
+            discord_file_object = discord.File(fp=file_bytes,filename=file_name)
+
+            print("we'd edit original message to attach file here")
+            return
+        await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
+        
+        await self._handle_book_api_command(option="find",interaction=interaction, title=title, author=author,success_callback=on_find_success)
+        """
         
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")

@@ -7,6 +7,9 @@ import shutil
 import re
 from src.env_config import config
 
+#used to mark files that are done uploading to discord user
+FINISH_SUFFIX = ".finish"
+
 def build_book_cog_payload(*,user: str, title: str, author: str = "") -> dict[str,dict[str,str]]:
     """ 
     Builds specific payload for book cog api calls. 
@@ -90,25 +93,27 @@ async def tag_file_finish(filepath : str):
 
 def _tag_file_finish(filepath : str):
     """ tags file to be recognized as finished with bot operations """
-    shutil.move(filepath,filepath + '.finish')
+    shutil.move(filepath,filepath + FINISH_SUFFIX)
 
-def extract_response_file_name(data:dict):
+def extract_response_file_info(data:dict) -> tuple[str,str] | None:
+    """ Extracts file info from api response. We get full file path, and file name of the expected/ requested file. """
     #file meta data is returned with the response can strip the .finish and then adjust the returns later 
     #response -> metadata key -> value is a dict -> we get the source key to get full path
     metadata = data.get('metadata')
-    if metadata is None:
-        return
-    expected_finish_source = metadata.get('source')
-    if expected_finish_source is None:
-        return
+    if not metadata:
+        return None
+    
+    source_path = metadata.get('source')
+    if not source_path:
+        return None
 
-    source_path = expected_finish_source
-    end_str_flag = ".finish"
     #data is full path , strip just for full file name
     file_name = os.path.basename(source_path)
-    if file_name.endswith(end_str_flag):
-        return file_name[:-len(end_str_flag)] #strip the end
-    return ""
+    if not file_name.endswith(FINISH_SUFFIX):
+        return None
+    
+    containing_folder = os.path.dirname(source_path)
+    return containing_folder, file_name[:-len(FINISH_SUFFIX)] 
 
 if __name__ == '__main__':
     print("not meant to be ran alone")
