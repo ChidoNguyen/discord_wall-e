@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import View, Button
 
-from typing import Callable , Awaitable , Optional , TypeGuard , Protocol
+from typing import Callable , Awaitable , Optional , TypeGuard , Protocol, Any
 '''
 Type guard to help with pylance static type hinting
 Protocol to use kwarg in function handler signature
@@ -17,6 +17,8 @@ from json import JSONDecodeError
 from src.discord_bot.utils.book_cog_api_util import BookApiClient
 from src.discord_bot.utils.book_cog_util import sanitize_username, build_book_cog_payload, discord_file_creation
 from ..util import sanitize_username, discord_file_creation , book_search_output , tag_file_finish
+#new util
+from src.discord_bot.utils.book_cog_util import extract_response_file_info , create_discord_file_attachment, tag_file_finish
 #views
 from src.discord_bot.views.pagination import PaginatorView 
 from src.discord_bot.views.book_options import ButtonEmbeddedLink,BookOptions
@@ -49,12 +51,14 @@ class Book(commands.Cog):
         self.bot = bot
         self.user_sessions = {}
         self.active_view : set[tuple[discord.ui.View, discord.Interaction]] = set() 
+
         self.cog_api_session = aiohttp.ClientSession()
         self.api = config.API_ENDPOINT
         self.api_handler = BookApiClient(
             base_url= config.API_ENDPOINT, 
             api_session= self.cog_api_session
             )
+        
         self.api_routes = {
             'find' : '/find',
             'find_hardmode' : '/find_hardmode',
@@ -77,47 +81,19 @@ class Book(commands.Cog):
             print(f'Failed to close out client session for book extension - {e}')
     
 
-    @staticmethod
-    def json_payload(*, user : str , title : str , author : str = "") -> dict:
-        unknown_book = {
-            'title' : title,
-            'author' : author
-        }
-        user_details = { 'username' : user}
+    async def _handle_book_api_command(self,*, interaction: discord.Interaction, option: str, title: str, author: str, success_callback: Callable[..., Awaitable[Any]]):
+        #revisit callable hinting later
+        ''' Reusable code for invoking api handler code for POST requests. '''
+
+        username = sanitize_username(interaction.user.name)
+        original_response = await interaction.original_response()
+        api_response = await self.api_handler.post_to_api(title=title,author=author, username=username, option=option)
+
+        if not api_response or api_response.get("status") != "success":
+            await original_response.edit(content="A problem occurred please try again later.")
+            return
         
-        data = {
-            'unknown_book' : unknown_book,
-            'user_details' : user_details
-        }
-        return data
-
-#######
-    @staticmethod
-    def _verify_discord_file(results : tuple[discord.File | None, str | None]) -> TypeGuard[tuple[discord.File,str]]:
-        """ 
-            Verifies the return values of _discord_file_creation()
-            Expect a two value tuple - (a,b):
-                a - expected to be discord.File object
-                b - file path to the source file (str)
-        """
-        return results[0] is not None and results[1] is not None
-
-    
-    """
-    Cog Specific Callable Handler:
-        REQUIRES 3 Arguments - interaction (discord.Interaction)
-                             - original_response (disocrd.InteractionMessage)
-                             - username (str and sanitized)
-        RETURNS BOOL
-    """
-    async def _find_handle(self, * , interaction : discord.Interaction, original_response : discord.InteractionMessage, username : str) -> bool:
-        file_status = await discord_file_creation(username=username)
-        if self._verify_discord_file(file_status):
-            discord_file , source_file_path = file_status
-            await original_response.edit(content=f"<Finished> {interaction.user.mention}",attachments=[discord_file])
-            await tag_file_finish(source_file_path)
-            return True
-        return False
+        await success_callback(username=username, api_response=api_response)
     
     async def _find_hardmode_handle(self, * , interaction : discord.Interaction ,original_response : discord.InteractionMessage, username : str) -> bool:
     #build the view to display search results + buttons
@@ -134,13 +110,13 @@ class Book(commands.Cog):
         return True
     
     async def _dm_request_handle(self, * ,interaction : discord.Interaction, original_response : Optional[discord.InteractionMessage] = None , username : str) -> bool:
-        dm_user = interaction.user
+        """ dm_user = interaction.user
         file_status = await discord_file_creation(username)
         if self._verify_discord_file(file_status):
             discord_file , source_file_path = file_status
             await dm_user.send("Is this what you wanted? Too bad if it isn't.", file = discord_file)
             await tag_file_finish(source_file_path)
-            return True
+            return True """
         return False
 
     async def _catalog_handle(self, interaction : discord.Interaction, data : dict) ->bool:
@@ -165,27 +141,6 @@ class Book(commands.Cog):
             book_command_handler : BookCommandHandler,
             root_url : str | None = None
     ) -> bool:
-        if root_url is None :
-            root_url = self.api
-
-        username = sanitize_username(interaction.user.name)
-        original_response = await interaction.original_response()
-        request_url = root_url + task_route
-        data = self.json_payload(user=username,title = data_payload[0],author = data_payload[1])
-        try:
-            async with self.cog_api_session.post(request_url,json=data) as response :
-                if response.status == 200:
-                    try:
-                        response_data = await response.json()
-                        if response_data is not None and await book_command_handler(interaction=interaction,original_response=original_response,username=username):
-                                return True
-                    except JSONDecodeError:
-                        print(f'Error decoding response json - {task_route}')
-        except aiohttp.ClientError as e:
-            print(f"A client error occurred - {task_route}: {e}")
-        except Exception as e:
-            print(f"An unexpected error occured - {task_route}: {e}")
-        await original_response.edit(content="```Try again later... and I mean later later.```")
         return False
 
     async def _book_cog_get_handle(
@@ -211,48 +166,29 @@ class Book(commands.Cog):
     @app_commands.command(name="find", description="Searches for a publication.")
     @app_commands.describe(title="title",author="author")
     async def find(self,interaction: discord.Interaction, title : str, author : str):
+        async def on_find_success(username: str, api_response: dict):
+            file_info = extract_response_file_info(api_response)
+            if not file_info:
+                print("handle error later")
+                return
+            file_path , file_name = file_info
+            discord_file_obj = await create_discord_file_attachment(file_path=file_path, file_name=file_name)
+
+            await interaction.edit_original_response(content= f"<Finished> {interaction.user.mention}", attachments=[discord_file_obj])
+            await tag_file_finish(file_path=file_path)
+
+            return
+        
         try:
             await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
         except Exception as e:
             print(e)
         # new approach should flatten out the logic layering with same level function calls rather than calls within calls.
         try:
-            # pre request requirements : payload and sanitation work
-            # api request
-            # response verification
-            # post processing for users
-
-            #prep work
-            username = sanitize_username(interaction.user.name)
-            api_response = await self.api_handler.post_to_api(title=title,author=author,username=username,option='find')
-            if not api_response:
-                print("fail holder")
-            print("discord file attachment")
+            await self._handle_book_api_command(option="find",interaction=interaction, title=title, author=author,success_callback=on_find_success)
         except Exception as e:
             print(e)
-        """
-        async def on_find_success(username: str, api_response: dict):
-            file_info = extract_response_file_info(api_response)
-            if not file_info:
-                print("handle error later")
-                return
-            containing_folder , file_name = file_info
-            #verify folder and file later
-            print("invoke some verification later")
-            
-            ####
 
-            with open(os.path.join(containing_folder,file_name), 'rb') as file:
-                file_bytes = BytesIO(file.read())
-            file_bytes.seek(0) # set back to beginning
-            discord_file_object = discord.File(fp=file_bytes,filename=file_name)
-
-            print("we'd edit original message to attach file here")
-            return
-        await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
-        
-        await self._handle_book_api_command(option="find",interaction=interaction, title=title, author=author,success_callback=on_find_success)
-        """
         
 
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")

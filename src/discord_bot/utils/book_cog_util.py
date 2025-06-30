@@ -75,6 +75,21 @@ def _discord_file_creation(username : str) -> tuple[discord.File,str] | tuple[No
     if attached_file is not None and target_file_path is not None:
         return (attached_file , target_file_path)
     return (None, None)
+
+async def create_discord_file_attachment(*, file_path: str, file_name: str) -> discord.File:
+    """ Prevents blocking. """
+    return await asyncio.to_thread(_create_discord_file_attachment,file_path=file_path,file_name=file_name)
+
+def _create_discord_file_attachment(*,file_path: str, file_name: str) -> discord.File:
+    """ Returns a discord.File object for use with message as an attachment. """
+
+    with open(file_path, 'rb') as file:
+        file_bytes = BytesIO(file.read())
+    file_bytes.seek(0)
+    discord_file_obj = discord.File(fp=file_bytes,filename=file_name)
+    
+    return discord_file_obj
+
 async def book_search_output(username: str) -> list[dict]:
     ''' prevents blocking io behaviour'''
     return await asyncio.to_thread(_book_search_output,username)
@@ -87,13 +102,13 @@ def _book_search_output(username:str) -> list[dict]:
     with open(os.path.join(user_folder,search_result) , 'r') as json_file:
         return json.load(json_file)
 
-async def tag_file_finish(filepath : str):
+async def tag_file_finish(*,file_path: str):
     ''' prevents blocking of other bot related commands '''
-    return await asyncio.to_thread(_tag_file_finish,filepath)
+    return await asyncio.to_thread(_tag_file_finish,file_path=file_path)
 
-def _tag_file_finish(filepath : str):
+def _tag_file_finish(*, file_path: str):
     """ tags file to be recognized as finished with bot operations """
-    shutil.move(filepath,filepath + FINISH_SUFFIX)
+    shutil.move(file_path,file_path + FINISH_SUFFIX)
 
 def extract_response_file_info(data:dict) -> tuple[str,str] | None:
     """ Extracts file info from api response. We get full file path, and file name of the expected/ requested file. """
@@ -106,15 +121,14 @@ def extract_response_file_info(data:dict) -> tuple[str,str] | None:
     source_path = metadata.get('source')
     if not source_path:
         return None
-
-    #data is full path , strip just for full file name
-    file_name = os.path.basename(source_path)
-    if not file_name.endswith(FINISH_SUFFIX):
-        return None
     
-    containing_folder = os.path.dirname(source_path)
-    return containing_folder, file_name[:-len(FINISH_SUFFIX)] 
+    #strip .finish from full source
+    stripped_source_path = source_path[:-len(FINISH_SUFFIX)]
 
+    #expected file name
+    file_name = os.path.basename(stripped_source_path)
+
+    return stripped_source_path , file_name
 if __name__ == '__main__':
     print("not meant to be ran alone")
     

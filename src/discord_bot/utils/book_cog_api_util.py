@@ -1,4 +1,5 @@
 import aiohttp
+import json
 from dataclasses import asdict
 from urllib.parse import urljoin
 from typing import Any
@@ -42,11 +43,11 @@ class BookApiClient:
         except KeyError:
             raise ValueError(f"Invalid API route option [`{option.lower().strip()}`] ")
     
-    async def _post(self,*, url: str, payload: dict[str,Any]) -> dict[str,Any] | None:
+    async def _post(self,*, url: str, payload: dict[str,Any]):
         try:
             async with self.api_client.post(url,json=payload) as response:
                 if response.status == 200:
-                    return await response.json()
+                    return json.loads(await response.json())
                 else:
                     print(f"Non 200 response from API: {response.status} for [url : {url}]")
         except aiohttp.ClientError as e:
@@ -59,4 +60,6 @@ class BookApiClient:
 
         url = self._get_api_endpoint(option)
         payload = self._build_request_payload(username= username, title= title, author= author)
-        return await self._post(url=url,payload=payload)
+        #return await self._post(url=url,payload=payload)
+        response = await self._post(url=url, payload=payload)
+        return response
