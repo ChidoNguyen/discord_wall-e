@@ -9,7 +9,7 @@ from src.env_config import config
 
 #used to mark files that are done uploading to discord user
 FINISH_SUFFIX = ".finish"
-
+SEARCH_RESULT_FILE_NAME = "results.json"
 def build_book_cog_payload(*,user: str, title: str, author: str = "") -> dict[str,dict[str,str]]:
     """ 
     Builds specific payload for book cog api calls. 
@@ -98,8 +98,8 @@ def _book_search_output(username:str) -> list[dict]:
     ''' reads in and returns search results in a dictionary for the bot '''
     user_folder = os.path.join(config.DOWNLOAD_DIR,username)
     #output.txt has results
-    search_result = "results.json"
-    with open(os.path.join(user_folder,search_result) , 'r') as json_file:
+    #search_result = "results.json"
+    with open(os.path.join(user_folder,SEARCH_RESULT_FILE_NAME) , 'r') as json_file:
         return json.load(json_file)
 
 async def tag_file_finish(*,file_path: str):

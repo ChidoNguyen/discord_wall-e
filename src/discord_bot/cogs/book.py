@@ -93,8 +93,10 @@ class Book(commands.Cog):
             await original_response.edit(content="A problem occurred please try again later.")
             return
         
-        await success_callback(username=username, api_response=api_response)
-    
+        app_command_process_status = await success_callback(username=username, api_response=api_response)
+        if not app_command_process_status:
+            print("deal with discord related file io error later")
+        
     async def _find_hardmode_handle(self, * , interaction : discord.Interaction ,original_response : discord.InteractionMessage, username : str) -> bool:
     #build the view to display search results + buttons
         search_results = await book_search_output(username)
@@ -169,16 +171,17 @@ class Book(commands.Cog):
         async def on_find_success(username: str, api_response: dict):
             file_info = extract_response_file_info(api_response)
             if not file_info:
-                print("handle error later")
-                return
+                return False , "Error locating file info from API response."
+            
             file_path , file_name = file_info
             discord_file_obj = await create_discord_file_attachment(file_path=file_path, file_name=file_name)
 
             await interaction.edit_original_response(content= f"<Finished> {interaction.user.mention}", attachments=[discord_file_obj])
+
             await tag_file_finish(file_path=file_path)
 
-            return
-        
+            return True
+        ### Start of app command code ###
         try:
             await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
         except Exception as e:
@@ -194,7 +197,10 @@ class Book(commands.Cog):
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
     async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
+        async def on_find_hardmode_success():
+            pass
         await interaction.response.send_message("Working on it...")
+
         await self._book_cog_post_handle(interaction,task_route=self.api_routes['find_hardmode'],data_payload=[title,author],book_command_handler=self._find_hardmode_handle)
        
     

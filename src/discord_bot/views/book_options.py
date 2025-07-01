@@ -16,22 +16,37 @@ if TYPE_CHECKING:
 
 
 class BookButton(Button):
-    def __init__(self, label: str, user_option: str, on_click: Callable, style= discord.ButtonStyle.primary):
+    def __init__(self, label: str, user_option: str, on_click: Callable | None, on_success: Callable | None, style= discord.ButtonStyle.primary):
         super().__init__(label=label, style=style)
         self.user_option = user_option
         self.on_click = on_click
+        self.on_success = on_success
+    
+    def _is_cancel(self):
+        """ If label is `X` or if no options set treat as cancel button. """
+        return self.label == "X" or not self.user_option or self.on_click is None or self.on_success is None
     
     async def callback(self, interaction: discord.Interaction):
         """ callable function passed down from parent cog to handle HTTP request in accordance to button option choice value. """
-        await self.on_click(interaction, self.user_option)
+
+        #check button type#
+        if self._is_cancel() and self.view:
+            self.view.clear_items()
+            await interaction.edit_original_response(content="```Cancelled```",view=self.view)
+        
+        #on click should be api_handler
+        #on success is on success call back
+        if self.on_click and self.on_success:
+            await self.on_click(interaction= interaction, option="pick", title=self.user_option, author= self.user_option,success_callback = self.on_success)
 
 
 #cogs pass down the call back handler function?
-class _BookOptions(View):
-    def __init__(self, links: list, on_option_click, timeout=120):
+class BookOptions(View):
+    def __init__(self,*, links: list, on_option_click, success_callback, timeout=120):
         super().__init__(timeout=timeout)
         self.links=links
         self.on_option_click = on_option_click
+        self.on_success = success_callback
         self._create_buttons()
         self.message: discord.Message | None
         #add buttons
@@ -49,7 +64,8 @@ class _BookOptions(View):
             new_button = BookButton(
                 label= str(index),
                 user_option=data['link'],
-                on_click=self.on_option_click
+                on_click=self.on_option_click,
+                on_success = self.on_success
             )
             self.add_item(new_button)
             
@@ -57,7 +73,8 @@ class _BookOptions(View):
         self.add_item(BookButton(
             label="X",
             user_option="",
-            on_click=self.on_option_click
+            on_click= None,
+            on_success= None
         ))
 
     def _generate_option_message_text(self) ->list[str]:
@@ -76,7 +93,7 @@ class _BookOptions(View):
             pass
 
     
-class BookOptions(View):
+class __BookOptions(View):
     """
     Class : BookOptions -  Custom discord bot UI for handling interactions with search results.
     
