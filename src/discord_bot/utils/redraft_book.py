@@ -41,12 +41,15 @@ class Book(commands.Cog):
 
         self.active_view : set[tuple[discord.ui.View, discord.Interaction]] = set() 
 
-    async def _handle_book_api_command(self,*, interaction: discord.Interaction, option: str, title: str, author: str, success_callback: Callable[..., Awaitable[Any]]):
+    async def _handle_book_api_command(self,*, interaction: discord.Interaction, option: str, title: str, author: str | None = None, success_callback: Callable[..., Awaitable[Any]]):
         #revisit callable hinting later
         ''' Reusable code for invoking api handler code for POST requests. '''
 
         username = sanitize_username(interaction.user.name)
+        author = author if author else "" #normalize author for empty str if None
+        
         original_response = await interaction.original_response()
+
         api_response = await self.api_handler.post_to_api(title=title,author=author, username=username, option=option)
 
         if not api_response or api_response.get("status") != "success":

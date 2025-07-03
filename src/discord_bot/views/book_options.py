@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class BookButton(Button):
-    def __init__(self, label: str, user_option: str, on_click: Callable | None, on_success: Callable | None, style= discord.ButtonStyle.primary):
+    def __init__(self, label: str, user_option: str | None, on_click: Callable | None, on_success: Callable | None, style= discord.ButtonStyle.primary):
         super().__init__(label=label, style=style)
         self.user_option = user_option
         self.on_click = on_click
@@ -33,11 +33,12 @@ class BookButton(Button):
         if self._is_cancel() and self.view:
             self.view.clear_items()
             await interaction.edit_original_response(content="```Cancelled```",view=self.view)
+            return
         
         #on click should be api_handler
         #on success is on success call back
         if self.on_click and self.on_success:
-            await self.on_click(interaction= interaction, option="pick", title=self.user_option, author= self.user_option,success_callback = self.on_success)
+            await self.on_click(interaction= interaction, option="pick", title=self.user_option, success_callback = self.on_success)
 
 
 #cogs pass down the call back handler function?
@@ -72,7 +73,7 @@ class BookOptions(View):
         #cancel button
         self.add_item(BookButton(
             label="X",
-            user_option="",
+            user_option= None,
             on_click= None,
             on_success= None
         ))
