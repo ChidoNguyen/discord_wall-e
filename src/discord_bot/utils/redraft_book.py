@@ -47,7 +47,7 @@ class Book(commands.Cog):
 
         username = sanitize_username(interaction.user.name)
         author = author if author else "" #normalize author for empty str if None
-        
+
         original_response = await interaction.original_response()
 
         api_response = await self.api_handler.post_to_api(title=title,author=author, username=username, option=option)
@@ -56,37 +56,40 @@ class Book(commands.Cog):
             await original_response.edit(content="A problem occurred please try again later.")
             return
         
-        app_command_process_status = await success_callback(username=username, api_response=api_response)
+        app_command_process_status = await success_callback(username, api_response, interaction)
         if not app_command_process_status:
             print("deal with discord related file io error later")
 
-    async def on_find_success(self,*,username: str, api_response: dict, interaction: discord.Interaction):
+    async def on_find_success(self,username: str, api_response: dict, interaction: discord.Interaction):
         """ Handles post API responses that requires file attachments or uploads. """
+
+        original_response = await interaction.original_response()
+
         file_info = extract_response_file_info(api_response)
         if not file_info:
             return False, "Error verifying/locating file info from API response."
         
         file_path , file_name = file_info #maybe dict change later?
         discord_file_obj = await create_discord_file_attachment(file_path=file_path, file_name=file_name)
-
-        await interaction.edit_original_response(content= f"<Finished> {interaction.user.mention}", attachments=[discord_file_obj])
+        
+        await original_response.edit(content= f"<Finished> {interaction.user.mention}", attachments=[discord_file_obj])
 
         await tag_file_finish(file_path=file_path)
-
+        #### Changing to make use of original_message edits for robustness #####
         return True
 
 
     @app_commands.command(name= "find", description= "Searches for a publication.")
     @app_commands.describe(title= "Title", author= "Author")
     async def find(self, interaction: discord.Interaction, title: str, author: str):
-
+        
         await interaction.response.send_message(f'Looking for \"{title} by {author}\"')
         
         await self._handle_book_api_command(option="find",interaction=interaction, title=title, author=author,success_callback= self.on_find_success)
             
     @app_commands.command(name='find_hardmode', description="The idk who wrote it option, or just more flexibility. Search and Pick")
     @app_commands.describe(title='title',author='author (optional)')
-    async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str = ""):
+    async def find_hardmode(self, interaction : discord.Interaction, title : str , author : str | None = None):
         async def on_find_hardmode_success(username: str, api_response: dict) :
             """ Grab results.json from user folder and format into options view for choosing. """
             search_result = await book_search_output(username)

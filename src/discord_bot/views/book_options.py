@@ -28,11 +28,16 @@ class BookButton(Button):
     
     async def callback(self, interaction: discord.Interaction):
         """ callable function passed down from parent cog to handle HTTP request in accordance to button option choice value. """
+        
+        #defer to check for button type first
+
+        await interaction.response.defer()
+        original_response = await interaction.original_response()
 
         #check button type#
         if self._is_cancel() and self.view:
             self.view.clear_items()
-            await interaction.edit_original_response(content="```Cancelled```",view=self.view)
+            await original_response.edit(content="```Cancelled```",view=self.view)
             return
         
         #on click should be api_handler
