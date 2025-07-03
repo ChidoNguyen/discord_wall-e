@@ -52,7 +52,7 @@ def build_script_options(*,search_query: UnknownBook , user_details: UserDetails
         "option" : option
     }
 
-def format_script_result(result: tuple[bool,str]) -> dict:
+def format_script_result(result: tuple[bool,dict]) -> dict:
     # need to refine script out 
     #assume dict for now ..
     status , data = result

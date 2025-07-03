@@ -20,7 +20,7 @@ SERVICE_MAP = {
 }
 VALID_SERVICE = set(SERVICE_MAP.keys())
 
-async def book_service_dispatch(*,service: str, search_query: UnknownBook, user_details: UserDetails) -> tuple[bool,str]:
+async def book_service_dispatch(*,service: str, search_query: UnknownBook, user_details: UserDetails) -> tuple[bool,dict]:
     """
     Trying out service map due to leaning out of other services to purely option changes.
     """
@@ -40,7 +40,7 @@ async def book_service_dispatch(*,service: str, search_query: UnknownBook, user_
     script_options = build_script_options(search_query=search_query, user_details=user_details, option=SERVICE_MAP[service])
     
     #already built our kwarg params , just unpack via **
-    script_results: tuple[bool,str] = await coroutine_runner(
+    script_results: tuple[bool,dict] = await coroutine_runner(
         book_bot,
         **script_options
     )

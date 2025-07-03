@@ -54,7 +54,7 @@ class BookApiClient:
         try:
             async with self.api_client.post(url,json=payload) as response:
                 if response.status == 200:
-                    return json.loads(await response.json())
+                    return await response.json()
                 else:
                     print(f"Non 200 response from API: {response.status} for [url : {url}]")
         except aiohttp.ClientError as e:
