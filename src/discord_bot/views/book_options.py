@@ -14,6 +14,7 @@ from src.discord_bot.utils.book_cog_util import discord_file_creation, tag_file_
 if TYPE_CHECKING:
     from src.discord_bot.cogs.book import Book
 
+#TODO : Determine VIEW clearing/usage for cog level on_find success and button level on_find success
 
 class BookButton(Button):
     """
