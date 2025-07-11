@@ -16,6 +16,14 @@ if TYPE_CHECKING:
 
 
 class BookButton(Button):
+    """
+    Button correlating to search result obtained from original app command interaction. 1:1 relation button:search_result.
+    
+    Args:
+        user_option: is unique value from search result
+        on_click: is a callable function that will handle api interaction
+        on_success: callable function to process a results from on_click api_interaction 
+    """
     def __init__(self, label: str, user_option: str | None, on_click: Callable | None, on_success: Callable | None, style= discord.ButtonStyle.primary):
         super().__init__(label=label, style=style)
         self.user_option = user_option
@@ -27,7 +35,10 @@ class BookButton(Button):
         return self.label == "X" or not self.user_option or self.on_click is None or self.on_success is None
     
     async def callback(self, interaction: discord.Interaction):
-        """ callable function passed down from parent cog to handle HTTP request in accordance to button option choice value. """
+        """ Callback function should be executing the logic of acquring our options. Mimics/uses on_success callback function of `find`
+        
+
+        """
         
         #defer to check for button type first
 
